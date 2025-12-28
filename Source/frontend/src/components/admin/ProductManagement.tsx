@@ -41,12 +41,13 @@ const ProductManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [formData, setFormData] = useState({
+const [formData, setFormData] = useState({
     name: "",
     category: "",
     price: "",
     description: "",
     image: "",
+    specs: [{ label: "", value: "" }],
   });
   const { toast } = useToast();
 
@@ -57,7 +58,7 @@ const ProductManagement = () => {
   );
 
   const handleOpenAddDialog = () => {
-    setFormData({ name: "", category: "", price: "", description: "", image: "" });
+    setFormData({ name: "", category: "", price: "", description: "", image: "", specs: [{ label: "", value: "" }] });
     setEditingProduct(null);
     setIsAddDialogOpen(true);
   };
@@ -69,9 +70,30 @@ const ProductManagement = () => {
       price: product.price.toString(),
       description: product.description,
       image: product.image,
+      specs: product.specs?.length > 0 ? product.specs : [{ label: "", value: "" }],
     });
     setEditingProduct(product);
     setIsAddDialogOpen(true);
+  };
+
+  const handleAddSpec = () => {
+    setFormData({
+      ...formData,
+      specs: [...formData.specs, { label: "", value: "" }],
+    });
+  };
+
+  const handleRemoveSpec = (index: number) => {
+    setFormData({
+      ...formData,
+      specs: formData.specs.filter((_, i) => i !== index),
+    });
+  };
+
+  const handleSpecChange = (index: number, field: "label" | "value", value: string) => {
+    const newSpecs = [...formData.specs];
+    newSpecs[index][field] = value;
+    setFormData({ ...formData, specs: newSpecs });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -86,6 +108,8 @@ const ProductManagement = () => {
       return;
     }
 
+    const validSpecs = formData.specs.filter((s) => s.label && s.value);
+
     if (editingProduct) {
       setProducts((prev) =>
         prev.map((p) =>
@@ -97,6 +121,7 @@ const ProductManagement = () => {
                 price: parseInt(formData.price),
                 description: formData.description,
                 image: formData.image || p.image,
+                specs: validSpecs.length > 0 ? validSpecs : p.specs,
               }
             : p
         )
@@ -114,7 +139,7 @@ const ProductManagement = () => {
         description: formData.description,
         image: formData.image || "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800",
         images: [formData.image || "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800"],
-        specs: [{ label: "Dung lượng", value: "128GB" }],
+        specs: validSpecs.length > 0 ? validSpecs : [{ label: "Dung lượng", value: "128GB" }],
         colors: [{ name: "Đen", hex: "#000000" }],
         storage: ["128GB"],
         rating: 5,
@@ -355,6 +380,52 @@ const ProductManagement = () => {
                 placeholder="Nhập URL hình ảnh"
               />
             </div>
+            
+            {/* Technical Specifications */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label>Thông số kỹ thuật</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAddSpec}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Thêm
+                </Button>
+              </div>
+              <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                {formData.specs.map((spec, index) => (
+                  <div key={index} className="flex gap-2 items-center">
+                    <Input
+                      placeholder="Tên thông số"
+                      value={spec.label}
+                      onChange={(e) => handleSpecChange(index, "label", e.target.value)}
+                      className="flex-1"
+                    />
+                    <Input
+                      placeholder="Giá trị"
+                      value={spec.value}
+                      onChange={(e) => handleSpecChange(index, "value", e.target.value)}
+                      className="flex-1"
+                    />
+                    {formData.specs.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleRemoveSpec(index)}
+                        className="shrink-0 text-destructive hover:text-destructive"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <div className="flex gap-3 justify-end">
               <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
                 Hủy

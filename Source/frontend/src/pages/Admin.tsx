@@ -13,6 +13,7 @@ import {
   ChevronRight,
   FileText,
   Megaphone,
+  UserCog,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -23,6 +24,7 @@ import RevenueStats from "@/components/admin/RevenueStats";
 import CustomerManagement from "@/components/admin/CustomerManagement";
 import ContentManagement from "@/components/admin/ContentManagement";
 import MarketingManagement from "@/components/admin/MarketingManagement";
+import UserManagement from "@/components/admin/UserManagement";
 
 const menuItems = [
   { id: "overview", label: "Tổng quan", icon: LayoutDashboard },
@@ -30,6 +32,7 @@ const menuItems = [
   { id: "orders", label: "Đơn hàng", icon: ShoppingCart },
   { id: "revenue", label: "Doanh thu", icon: BarChart3 },
   { id: "customers", label: "Khách hàng", icon: Users },
+  { id: "users", label: "Người dùng", icon: UserCog },
   { id: "content", label: "Nội dung", icon: FileText },
   { id: "marketing", label: "Marketing", icon: Megaphone },
   { id: "settings", label: "Cài đặt", icon: Settings },
@@ -55,6 +58,8 @@ const Admin = () => {
         return <ContentManagement />;
       case "marketing":
         return <MarketingManagement />;
+      case "users":
+        return <UserManagement />;
       case "settings":
         return (
           <div className="flex items-center justify-center h-full">
