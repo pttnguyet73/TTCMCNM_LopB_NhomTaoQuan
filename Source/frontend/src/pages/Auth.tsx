@@ -22,7 +22,7 @@ export default function AuthPage() {
     e.preventDefault();
     
     if (isLogin) {
-      toast.success('Đăng nhập thành công!');
+      toast.success('Đăng nhập thành công!  Chào mừng trở lại iStore.');
     } else {
       if (password !== confirmPassword) {
         toast.error('Mật khẩu xác nhận không khớp!');
