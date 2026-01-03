@@ -1,4 +1,4 @@
-import { useState } from "react";
+
 import { motion } from "framer-motion";
 import {
   LayoutDashboard,
@@ -25,6 +25,7 @@ import CustomerManagement from "@/components/admin/CustomerManagement";
 import ContentManagement from "@/components/admin/ContentManagement";
 import MarketingManagement from "@/components/admin/MarketingManagement";
 import UserManagement from "@/components/admin/UserManagement";
+import { useEffect, useState } from "react";
 
 const menuItems = [
   { id: "overview", label: "Tổng quan", icon: LayoutDashboard },
@@ -39,8 +40,21 @@ const menuItems = [
 ];
 
 const Admin = () => {
+
+  const [data, setData] = useState(null);
+
+   useEffect(() => {
+    fetch("http://localhost:8001/admin/")
+      .then((res) => res.json())
+      .then((result) => {
+        setData(result);
+      })
+      .catch((err) => console.error(err));
+  }, []);
+
   const [activeTab, setActiveTab] = useState("overview");
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  
 
   const renderContent = () => {
     switch (activeTab) {
