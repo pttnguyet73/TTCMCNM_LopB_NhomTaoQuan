@@ -11,13 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('review', function (Blueprint $table) {
+        Schema::create('cart_item', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('cart_id')->constrained('cart')->onDelete('cascade')->onUpdate('cascade');
             $table->foreignId('product_id')->constrained('product')->onDelete('cascade')->onUpdate('cascade');
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade')->onUpdate('cascade');
-            $table->integer('rating');
-            $table->text('comment')->nullable();
-            $table->text('status');
+            $table->integer('quantity');
+            $table->text('color');
+            $table->integer('storage');
             $table->timestamps();
         });
     }
@@ -27,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('review');
+        Schema::dropIfExists('cart_item');
     }
 };

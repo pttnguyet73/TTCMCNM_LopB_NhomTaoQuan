@@ -41,4 +41,11 @@ class CategoryController extends Controller
         $category->delete();
         return response()->json(['message' => 'Xóa danh mục thành công']);
     }
+
+    public function softDelete($id)
+    {
+        $category = Category::findOrFail($id);
+        $category->update(['is_delete' => true]);
+        return response()->json(null, 204);
+    }
 }
