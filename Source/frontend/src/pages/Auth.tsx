@@ -6,6 +6,9 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { toast } from 'sonner';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
+import api from '@/lib/api';
+import { useNavigate } from 'react-router-dom';
+
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -17,49 +20,79 @@ export default function AuthPage() {
   const [name, setName] = useState('');
   const [showOTP, setShowOTP] = useState(false);
   const [otpValue, setOtpValue] = useState('');
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (isLogin) {
-      toast.success('Đăng nhập thành công!');
-    } else {
-      if (password !== confirmPassword) {
-        toast.error('Mật khẩu xác nhận không khớp!');
-        return;
-      }
-      if (password.length < 6) {
-        toast.error('Mật khẩu phải có ít nhất 6 ký tự!');
-        return;
-      }
-      // Show OTP verification
+      await handleLogin();
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      toast.error('Mật khẩu xác nhận không khớp');
+      return;
+    }
+
+    try {
+      await api.post('/register', {
+        name,
+        email,
+        password,
+        password_confirmation: confirmPassword,
+      });
+
       setShowOTP(true);
-      toast.success('Mã xác nhận đã được gửi đến email của bạn!');
+      toast.success('Mã xác nhận đã gửi về email');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Lỗi đăng ký');
     }
   };
 
-  const handleVerifyOTP = () => {
-    if (otpValue.length === 6) {
-      toast.success('Đăng ký thành công! Chào mừng bạn đến với iStore.');
+  const handleVerifyOTP = async () => {
+    try {
+      await api.post('/verify-email', {
+        email,
+        code: otpValue,
+      });
+
+      toast.success('Xác thực thành công, mời đăng nhập');
       setShowOTP(false);
       setIsLogin(true);
-      // Reset form
-      setEmail('');
-      setPassword('');
-      setConfirmPassword('');
-      setName('');
-      setOtpValue('');
-    } else {
-      toast.error('Vui lòng nhập đủ 6 số!');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'OTP không đúng');
     }
   };
 
-  const handleSocialLogin = (provider: 'google' | 'facebook') => {
-    toast.info(`Đang kết nối với ${provider === 'google' ? 'Google' : 'Facebook'}...`);
+  const handleLogin = async () => {
+    try {
+      const res = await api.post('/login', {
+        email,
+        password,
+      });
+      localStorage.setItem('user_id', res.data.user.id);
+      localStorage.setItem('access_token', res.data.access_token);
+      toast.success('Đăng nhập thành công');
+      navigate('/admin', { replace: true });
+
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Sai thông tin đăng nhập');
+    }
   };
 
-  const handleResendOTP = () => {
-    toast.success('Đã gửi lại mã xác nhận!');
+
+  const handleSocialLogin = (provider: 'google' | 'facebook') => {
+    if (provider === 'google') {
+      window.location.href = 'http://localhost:8001/auth/google';
+    }
+
+  };
+
+  const handleResendOTP = async () => {
+    await api.post('/resend-code', { email });
+    toast.success('Đã gửi lại mã');
   };
 
   return (
@@ -106,9 +139,10 @@ export default function AuthPage() {
                       </InputOTPGroup>
                     </InputOTP>
 
-                    <Button 
-                      variant="hero" 
-                      size="lg" 
+                    <Button
+                      type="submit"
+                      variant="hero"
+                      size="lg"
                       className="w-full"
                       onClick={handleVerifyOTP}
                     >
@@ -286,7 +320,9 @@ export default function AuthPage() {
                       </div>
                     )}
 
-                    <Button variant="hero" size="lg" className="w-full">
+                    <Button
+                      type="submit"
+                      variant="hero" size="lg" className="w-full">
                       {isLogin ? 'Đăng nhập' : 'Đăng ký'}
                       <ArrowRight className="w-5 h-5" />
                     </Button>

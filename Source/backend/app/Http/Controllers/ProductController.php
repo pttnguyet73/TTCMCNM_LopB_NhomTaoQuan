@@ -38,4 +38,12 @@ class ProductController extends Controller
         $product->delete();
         return response()->json(null, 204);
     }
+
+    //viết funtion xóa mềm có tên softDelete update lại trường is_delete thành true
+    public function softDelete($id)
+    {
+        $product = Product::findOrFail($id);
+        $product->update(['is_delete' => true]);
+        return response()->json(null, 204);
+    }
 }

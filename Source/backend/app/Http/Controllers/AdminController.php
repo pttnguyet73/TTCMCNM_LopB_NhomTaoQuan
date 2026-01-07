@@ -6,8 +6,11 @@ use Illuminate\Http\Request;
 
 class AdminController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return view();
+        return response()->json([
+        'message' => 'Admin access granted',
+        'user' => $request->user()
+    ]);
     }
 }
