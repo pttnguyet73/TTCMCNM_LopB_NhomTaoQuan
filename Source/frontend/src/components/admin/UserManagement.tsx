@@ -12,6 +12,8 @@ import {
   Eye,
   Trash2,
   UserCog,
+  EyeOff,
+  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -122,8 +124,81 @@ const UserManagement = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
+  const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [newRole, setNewRole] = useState<string>("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [newUserForm, setNewUserForm] = useState({
+    fullName: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    role: "user" as "admin" | "moderator" | "user",
+    status: "active" as "active" | "inactive" | "banned",
+  });
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const { toast } = useToast();
+
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const handleAddUser = () => {
+    const errors: Record<string, string> = {};
+
+    if (!newUserForm.fullName.trim()) {
+      errors.fullName = "Vui lòng nhập họ và tên";
+    }
+    if (!newUserForm.email.trim()) {
+      errors.email = "Vui lòng nhập email";
+    } else if (!validateEmail(newUserForm.email)) {
+      errors.email = "Email không hợp lệ";
+    }
+    if (!newUserForm.password) {
+      errors.password = "Vui lòng nhập mật khẩu";
+    } else if (newUserForm.password.length < 6) {
+      errors.password = "Mật khẩu phải có ít nhất 6 ký tự";
+    }
+    if (newUserForm.password !== newUserForm.confirmPassword) {
+      errors.confirmPassword = "Mật khẩu không khớp";
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+
+    const newUser: User = {
+      id: Date.now().toString(),
+      email: newUserForm.email,
+      fullName: newUserForm.fullName,
+      role: newUserForm.role,
+      status: newUserForm.status,
+      createdAt: new Date().toISOString().split("T")[0],
+      ordersCount: 0,
+      totalSpent: 0,
+    };
+
+    setUsers((prev) => [newUser, ...prev]);
+    setIsAddUserOpen(false);
+    setNewUserForm({
+      fullName: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      role: "user",
+      status: "active",
+    });
+    setFormErrors({});
+    setShowPassword(false);
+    setShowConfirmPassword(false);
+
+    toast({
+      title: "Thêm thành công",
+      description: `Đã thêm người dùng ${newUser.fullName}`,
+    });
+  };
 
   const filteredUsers = users.filter((user) => {
     const matchesSearch =
@@ -323,8 +398,12 @@ const UserManagement = () => {
 
       {/* Users Table */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Danh sách người dùng</CardTitle>
+          <Button onClick={() => setIsAddUserOpen(true)} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Thêm người dùng
+          </Button>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -546,6 +625,166 @@ const UserManagement = () => {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Add User Dialog */}
+      <Dialog open={isAddUserOpen} onOpenChange={(open) => {
+        setIsAddUserOpen(open);
+        if (!open) {
+          setFormErrors({});
+          setShowPassword(false);
+          setShowConfirmPassword(false);
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5" />
+              Thêm người dùng mới
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* Full Name */}
+            <div className="space-y-2">
+              <Label htmlFor="fullName">Họ và tên</Label>
+              <Input
+                id="fullName"
+                placeholder="Nhập họ và tên"
+                value={newUserForm.fullName}
+                onChange={(e) =>
+                  setNewUserForm((prev) => ({ ...prev, fullName: e.target.value }))
+                }
+                className={formErrors.fullName ? "border-destructive" : ""}
+              />
+              {formErrors.fullName && (
+                <p className="text-xs text-destructive">{formErrors.fullName}</p>
+              )}
+            </div>
+
+            {/* Email */}
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="example@email.com"
+                value={newUserForm.email}
+                onChange={(e) =>
+                  setNewUserForm((prev) => ({ ...prev, email: e.target.value }))
+                }
+                className={formErrors.email ? "border-destructive" : ""}
+              />
+              {formErrors.email && (
+                <p className="text-xs text-destructive">{formErrors.email}</p>
+              )}
+            </div>
+
+            {/* Password */}
+            <div className="space-y-2">
+              <Label htmlFor="password">Mật khẩu</Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Nhập mật khẩu"
+                  value={newUserForm.password}
+                  onChange={(e) =>
+                    setNewUserForm((prev) => ({ ...prev, password: e.target.value }))
+                  }
+                  className={formErrors.password ? "border-destructive pr-10" : "pr-10"}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              {formErrors.password && (
+                <p className="text-xs text-destructive">{formErrors.password}</p>
+              )}
+            </div>
+
+            {/* Confirm Password */}
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Nhập lại mật khẩu</Label>
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="Nhập lại mật khẩu"
+                  value={newUserForm.confirmPassword}
+                  onChange={(e) =>
+                    setNewUserForm((prev) => ({ ...prev, confirmPassword: e.target.value }))
+                  }
+                  className={formErrors.confirmPassword ? "border-destructive pr-10" : "pr-10"}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              {formErrors.confirmPassword && (
+                <p className="text-xs text-destructive">{formErrors.confirmPassword}</p>
+              )}
+            </div>
+
+            {/* Role and Status */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Vai trò</Label>
+                <Select
+                  value={newUserForm.role}
+                  onValueChange={(value: "admin" | "moderator" | "user") =>
+                    setNewUserForm((prev) => ({ ...prev, role: value }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="moderator">Saler</SelectItem>
+                    <SelectItem value="user">User</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Trạng thái</Label>
+                <Select
+                  value={newUserForm.status}
+                  onValueChange={(value: "active" | "inactive" | "banned") =>
+                    setNewUserForm((prev) => ({ ...prev, status: value }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Hoạt động</SelectItem>
+                    <SelectItem value="inactive">Không hoạt động</SelectItem>
+                    <SelectItem value="banned">Bị cấm</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Buttons */}
+            <div className="flex gap-3 justify-end pt-4">
+              <Button variant="outline" onClick={() => setIsAddUserOpen(false)}>
+                Hủy
+              </Button>
+              <Button onClick={handleAddUser} className="gap-2">
+                <UserPlus className="h-4 w-4" />
+                Thêm người dùng
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
