@@ -1,6 +1,10 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
+use Illuminate\Http\Request;
+use App\Http\Controllers\ProductController;
+
 
 Route::post('/product-colors', [App\Http\Controllers\productColorController::class, 'store']);
 Route::get('/product-colors/{id}', [App\Http\Controllers\productColorController::class, 'show']);
@@ -33,12 +37,13 @@ Route::delete('/category/{id}', [App\Http\Controllers\CategoryController::class,
 Route::get('/category', [App\Http\Controllers\CategoryController::class, 'index']);
 Route::post('/category/soft-delete/{id}', [App\Http\Controllers\CategoryController::class, 'softDelete']);
 
-Route::post('/products', [App\Http\Controllers\ProductController::class, 'store']);
-Route::get('/products/{id}', [App\Http\Controllers\ProductController::class, 'show']);
-Route::put('/products/{id}', [App\Http\Controllers\ProductController::class, 'update']);
-Route::delete('/products/{id}', [App\Http\Controllers\ProductController::class, 'destroy']);
-Route::get('/products', [App\Http\Controllers\ProductController::class, 'index']);
-Route::post('/products/soft-delete/{id}', [App\Http\Controllers\ProductController::class, 'softDelete']);
+Route::middleware(['auth:sanctum', 'admin'])->prefix('products')->group(function () {
+    Route::get('/', [ProductController::class, 'index']); 
+    Route::post('/', [ProductController::class, 'store']);       
+    Route::get('/{id}', [ProductController::class, 'show']);   
+    Route::put('/{id}', [ProductController::class, 'update']);  
+    Route::delete('/{id}', [ProductController::class, 'destroy']); 
+});
 
 Route::post('/product-coupons', [App\Http\Controllers\ProductCouponController::class, 'attachCoupon']);
 Route::delete('/product-coupons', [App\Http\Controllers\ProductCouponController::class, 'detachCoupon']);
@@ -81,3 +86,15 @@ Route::post('/order-items', [App\Http\Controllers\OrderItemController::class, 's
 Route::get('/order-items/{id}', [App\Http\Controllers\OrderItemController::class, 'show']);
 Route::put('/order-items/{id}', [App\Http\Controllers\OrderItemController::class, 'update']);
 Route::delete('/order-items/{id}', [App\Http\Controllers\OrderItemController::class, 'destroy']);
+
+Route::post('register', [AuthController::class, 'register']);
+Route::post('login', [AuthController::class, 'login']);
+Route::post('verify-email', [AuthController::class, 'verifyEmail']);
+Route::post('resend-code', [AuthController::class, 'resendCode']);
+
+Route::middleware(['auth:sanctum', 'admin'])->get('/admin', function (Request $request) {
+    return response()->json([
+        'user' => $request->user()
+    ]);
+});
+

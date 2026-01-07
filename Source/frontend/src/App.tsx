@@ -13,6 +13,8 @@ import Checkout from "./pages/Checkout";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
+import AdminGuard from "./pages/AdminGuard";
+import SocialCallback from "./pages/SocialCallback";
 
 const queryClient = new QueryClient();
 
@@ -30,7 +32,8 @@ const App = () => (
             <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/admin" element={<Admin />} />
+            <Route path="/admin" element={<AdminGuard />} />
+            <Route path="/auth/callback" element={<SocialCallback />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
