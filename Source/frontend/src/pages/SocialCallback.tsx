@@ -1,34 +1,33 @@
 import { useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
-const SocialCallback = () => {
+const Callback = () => {
   const navigate = useNavigate();
-  const location = useLocation();
 
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
+    const params = new URLSearchParams(window.location.search);
+
     const token = params.get('token');
     const role = params.get('role');
-    const id = params.get('id');
+    const userId = params.get('id');
 
-    if (token && id) {
-      localStorage.setItem('access_token', token);
-      localStorage.setItem('user_role', role || 'user');
-      localStorage.setItem('user_id', id);
-        navigate('/', { replace: true });
-      
-    } else {
-      navigate('/login', { replace: true });
+    if (!token || !role) {
+      navigate('/login');
+      return;
     }
-  }, [location, navigate]);
 
-  return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-      <div className="loader-container">
-        <p>Đang xác thực thông tin tài khoản...</p>
-      </div>
-    </div>
-  );
+    localStorage.setItem('access_token', token);
+    localStorage.setItem('role', role);
+    localStorage.setItem('user_id', userId || '');
+
+    if (role === 'admin') {
+      navigate('/admin', { replace: true });
+    } else {
+      navigate('/', { replace: true });
+    }
+  }, [navigate]);
+
+  return <p>Đang đăng nhập...</p>;
 };
 
-export default SocialCallback;
+export default Callback;

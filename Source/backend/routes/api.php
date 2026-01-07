@@ -37,7 +37,7 @@ Route::delete('/category/{id}', [App\Http\Controllers\CategoryController::class,
 Route::get('/category', [App\Http\Controllers\CategoryController::class, 'index']);
 Route::post('/category/soft-delete/{id}', [App\Http\Controllers\CategoryController::class, 'softDelete']);
 
-Route::middleware(['auth:sanctum', 'admin'])->prefix('products')->group(function () {
+Route::middleware(['auth:sanctum', 'saler'])->prefix('products')->group(function () {
     Route::get('/', [ProductController::class, 'index']); 
     Route::post('/', [ProductController::class, 'store']);       
     Route::get('/{id}', [ProductController::class, 'show']);   
