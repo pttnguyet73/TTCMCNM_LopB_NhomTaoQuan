@@ -11,12 +11,29 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('productCoupon', function (Blueprint $table) {
-            $table->foreignId('coupon_id')->constrained('coupon')->cascadeOnDelete()->cascadeOnUpdate();
-            $table->foreignId('product_id')->constrained('product')->cascadeOnDelete()->cascadeOnUpdate();
-            $table->primary(['coupon_id', 'product_id']);
-            $table->timestamps();
-        });
+        Schema::create('product_coupon', function (Blueprint $table) {
+    $table->engine = 'InnoDB';
+
+    $table->unsignedBigInteger('coupon_id');
+    $table->unsignedBigInteger('product_id');
+
+    $table->primary(['coupon_id', 'product_id']);
+
+    $table->foreign('coupon_id')
+          ->references('id')
+          ->on('coupon')
+          ->cascadeOnDelete()
+          ->cascadeOnUpdate();
+
+    $table->foreign('product_id')
+          ->references('id')
+          ->on('product')
+          ->cascadeOnDelete()
+          ->cascadeOnUpdate();
+
+    $table->timestamps();
+});
+
     }
 
     /**
