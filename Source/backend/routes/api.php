@@ -5,9 +5,12 @@ use App\Http\Controllers\AuthController;
 use Illuminate\Http\Request;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\Admin\CustomerController;  
-use App\Http\Controllers\Admin\AdminOrderController;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Admin\CustomerExportController;
+use App\Http\Controllers\OrderController;
+use App\Http\Controllers\ChatController;
+use App\Http\Controllers\Admin\AdminOrderController;
+
 
 Route::middleware(['auth:sanctum', 'admin'])->prefix('product-colors')->group(function () {
     Route::get('/', [App\Http\Controllers\productColorController::class, 'index']); 
@@ -131,13 +134,28 @@ Route::middleware(['auth:sanctum'])->prefix('admin')->group(function () {
     Route::get('/order', [AdminOrderController::class, 'index']);
 });
 
-Route::get('/test/db', function () {
-    return [
-        'db' => DB::getDatabaseName(),
-        'orders' => DB::table('orders')->count(),
-        'users' => DB::table('users')->count(),
-    ];
-});
+
+// Route::get('/test/db', function () {
+//     return [
+//         'db' => DB::getDatabaseName(),
+//         'orders' => DB::table('orders')->count(),
+//         'users' => DB::table('users')->count(),
+//     ];
+// });
 
 Route::get('/admin/customers/export', [CustomerExportController::class, 'export']);
 
+Route::prefix('admin')->group(function () {
+    Route::get('/orders', [OrderController::class, 'index']);
+});
+
+
+Route::get('/admin/orders/{id}', [OrderController::class, 'show']);
+Route::prefix('admin')->group(function () {
+    Route::patch('orders/{id}/status', [OrderController::class, 'updateStatus']);
+});
+
+Route::post('/coupon/validate', [OrderController::class, 'validateCoupon']);
+
+
+Route::post('/chat', [ChatController::class, '__invoke']);
