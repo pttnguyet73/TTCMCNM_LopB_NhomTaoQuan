@@ -27,46 +27,35 @@ class GoogleController extends Controller
 
     public function handleGoogleCallback()
     {
-
         try {
-            $user = Socialite::driver('google')->user();
+            $googleUser = Socialite::driver('google')->user();
 
-            $finduser = User::where('google_id', $user->id)->first();
+            $user = User::where('email', $googleUser->email)->first();
 
-            if ($finduser) {
-
-                Auth::login($finduser);
-                $token = $finduser->createToken('authToken')->plainTextToken;
-
-                return redirect(
-                    'http://localhost:5173/admin'
-                );
-            } else {
-
-                $newUser = User::create([
-
-                    'name' => $user->name,
-
-                    'email' => $user->email,
-
-                    'google_id' => $user->id,
-
+            if (!$user) {
+                $user = User::create([
+                    'name' => $googleUser->name,
+                    'email' => $googleUser->email,
+                    'google_id' => $googleUser->id,
                     'password' => Hash::make(Str::random(24)),
                     'role' => 'user',
-
                 ]);
-
-                Auth::login($newUser);
-
-                $token = $newUser->createToken('authToken')->plainTextToken;
-                return redirect('http://localhost:5173/auth/callback' .
-                    '?token=' . $token .
-                    '&role=' . $user->role .
-                    '&id=' . $user->id);
             }
-        } catch (Exception $e) {
 
-            dd($e->getMessage());
+            Auth::login($user);
+
+            $token = $user->createToken('authToken')->plainTextToken;
+
+            return redirect(
+                'http://localhost:5173/auth/callback'
+                    . '?token=' . $token
+                    . '&role=' . $user->role
+                    . '&id=' . $user->id
+            );
+        } catch (Exception $e) {
+            return redirect(
+                'http://localhost:5173/login?error=google_login_failed'
+            );
         }
     }
 }

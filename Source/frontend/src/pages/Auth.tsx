@@ -75,7 +75,11 @@ export default function AuthPage() {
       localStorage.setItem('user_id', res.data.user.id);
       localStorage.setItem('access_token', res.data.access_token);
       toast.success('Đăng nhập thành công');
-      navigate('/admin', { replace: true });
+      if (res.data.user.role === 'admin') {
+        navigate('/admin', { replace: true });
+      } else {
+        navigate('/', { replace: true });
+      }
 
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Sai thông tin đăng nhập');

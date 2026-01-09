@@ -8,8 +8,8 @@ return new class extends Migration
 {
     public function up(): void
     {   
-        if (!Schema::hasTable('category')) {
-            Schema::create('category', function (Blueprint $table) {
+        if (!Schema::hasTable('categories')) {
+            Schema::create('categories', function (Blueprint $table) {
                 $table->id();
                 $table->string('name');
                 $table->string('slug')->unique();
@@ -22,6 +22,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('category');
+        Schema::dropIfExists('categories');
     }
 };
