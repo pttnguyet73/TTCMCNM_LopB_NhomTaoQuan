@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use Illuminate\Http\Request;
+use App\Http\Controllers\ChatController;
 use App\Http\Controllers\ProductController;
 
 
@@ -97,4 +98,6 @@ Route::middleware(['auth:sanctum', 'admin'])->get('/admin', function (Request $r
         'user' => $request->user()
     ]);
 });
+
+Route::post('/chat', ChatController::class);
 

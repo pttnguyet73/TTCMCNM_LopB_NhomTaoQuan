@@ -50,7 +50,7 @@ const DashboardOverview = () => {
     const fetchAdminOrders = async () => {
       try {
         setLoading(true);
-        const res = await api.get('/admin/Orders');
+        const res = await api.get('/orders');
         setOrders(res.data); 
       } catch (err) {
         console.error("Lỗi lấy đơn hàng admin:", err);

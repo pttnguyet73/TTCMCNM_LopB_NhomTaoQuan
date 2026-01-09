@@ -33,9 +33,10 @@ class OrderController extends Controller
         return response()->json($order, 200);
     }
 
+    //lấy tất cả tên của khách hàng theo đơn hàng và chi tiêt đơn hàng
     public function index()
     {
-        $orders = Order::all();
+        $orders = Order::with('user', 'orderItems')->get();
         return response()->json($orders, 200);
     }
 }
