@@ -39,6 +39,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'code',
         'code_expires_at',
         'role',
+        'status',
     ];
 
     protected $hidden = [
@@ -60,5 +61,10 @@ class User extends Authenticatable implements MustVerifyEmail
         'profile_photo_url',
 
     ];
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
 
 }
