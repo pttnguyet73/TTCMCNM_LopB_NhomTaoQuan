@@ -5,44 +5,61 @@ use App\Http\Controllers\AuthController;
 use Illuminate\Http\Request;
 use App\Http\Controllers\ProductController;
 
+Route::middleware(['auth:sanctum', 'admin'])->prefix('product-colors')->group(function () {
+    Route::get('/', [App\Http\Controllers\productColorController::class, 'index']); 
+    Route::post('/', [App\Http\Controllers\productColorController::class, 'store']);       
+    Route::get('/{id}', [App\Http\Controllers\productColorController::class, 'show']);   
+    Route::put('/{id}', [App\Http\Controllers\productColorController::class, 'update']);  
+    Route::delete('/{id}', [App\Http\Controllers\productColorController::class, 'destroy']); 
+});
+Route::middleware(['auth:sanctum', 'admin'])->prefix('product-specs')->group(function () {
+    Route::get('/', [App\Http\Controllers\ProductSpecController::class, 'index']); 
+    Route::post('/', [App\Http\Controllers\ProductSpecController::class, 'store']);       
+    Route::get('/{id}', [App\Http\Controllers\ProductSpecController::class, 'show']);   
+    Route::put('/{id}', [App\Http\Controllers\ProductSpecController::class, 'update']);  
+    Route::delete('/{id}', [App\Http\Controllers\ProductSpecController::class, 'destroy']); 
+});
 
-Route::post('/product-colors', [App\Http\Controllers\productColorController::class, 'store']);
-Route::get('/product-colors/{id}', [App\Http\Controllers\productColorController::class, 'show']);
-Route::put('/product-colors/{id}', [App\Http\Controllers\productColorController::class, 'update']);
-Route::delete('/product-colors/{id}', [App\Http\Controllers\productColorController::class, 'destroy']);
-Route::get('/product-colors', [App\Http\Controllers\productColorController::class, 'index']);
+Route::middleware(['auth:sanctum', 'admin'])->prefix('product-images')->group(function () {
+    Route::get('/', [App\Http\Controllers\ProductImageController::class, 'index']); 
+    Route::post('/', [App\Http\Controllers\ProductImageController::class, 'store']);       
+    Route::get('/{id}', [App\Http\Controllers\ProductImageController::class, 'show']);   
+    Route::put('/{id}', [App\Http\Controllers\ProductImageController::class, 'update']);  
+    Route::delete('/{id}', [App\Http\Controllers\ProductImageController::class, 'destroy']); 
+});
 
-Route::post('/product-specs', [App\Http\Controllers\ProductSpecController::class, 'store']);
-Route::get('/product-specs/{id}', [App\Http\Controllers\ProductSpecController::class, 'show']);
-Route::put('/product-specs/{id}', [App\Http\Controllers\ProductSpecController::class, 'update']);
-Route::delete('/product-specs/{id}', [App\Http\Controllers\ProductSpecController::class, 'destroy']);
-Route::get('/product-specs', [App\Http\Controllers\ProductSpecController::class, 'index']);
 
-Route::post('/product-images', [App\Http\Controllers\ProductImageController::class, 'store']);
-Route::get('/product-images/{id}', [App\Http\Controllers\ProductImageController::class, 'show']);
-Route::put('/product-images/{id}', [App\Http\Controllers\ProductImageController::class, 'update']);
-Route::delete('/product-images/{id}', [App\Http\Controllers\ProductImageController::class, 'destroy']);
-Route::get('/product-images', [App\Http\Controllers\ProductImageController::class, 'index']);
+Route::middleware(['auth:sanctum', 'admin'])->prefix('product-storages')->group(function () {
+    Route::get('/', [App\Http\Controllers\ProductStorageController::class, 'index']); 
+    Route::post('/', [App\Http\Controllers\ProductStorageController::class, 'store']);       
+    Route::get('/{id}', [App\Http\Controllers\ProductStorageController::class, 'show']);   
+    Route::put('/{id}', [App\Http\Controllers\ProductStorageController::class, 'update']);  
+    Route::delete('/{id}', [App\Http\Controllers\ProductStorageController::class, 'destroy']); 
+});
 
-Route::post('/product-storages', [App\Http\Controllers\ProductStorageController::class, 'store']);
-Route::get('/product-storages/{id}', [App\Http\Controllers\ProductStorageController::class, 'show']);
-Route::put('/product-storages/{id}', [App\Http\Controllers\ProductStorageController::class, 'update']);
-Route::delete('/product-storages/{id}', [App\Http\Controllers\ProductStorageController::class, 'destroy']);
-Route::get('/product-storages', [App\Http\Controllers\ProductStorageController::class, 'index']);
+// Public routes (không cần đăng nhập)
+Route::prefix('categories')->group(function () {
+    Route::get('/', [App\Http\Controllers\CategoryController::class, 'index']); 
+    Route::get('/{id}', [App\Http\Controllers\CategoryController::class, 'show']);   
+});
 
-Route::post('/category', [App\Http\Controllers\CategoryController::class, 'store']);
-Route::get('/category/{id}', [App\Http\Controllers\CategoryController::class, 'show']);
-Route::put('/category/{id}', [App\Http\Controllers\CategoryController::class, 'update']);
-Route::delete('/category/{id}', [App\Http\Controllers\CategoryController::class, 'destroy']);
-Route::get('/category', [App\Http\Controllers\CategoryController::class, 'index']);
-Route::post('/category/soft-delete/{id}', [App\Http\Controllers\CategoryController::class, 'softDelete']);
+Route::prefix('products')->group(function () {
+    Route::get('/', [ProductController::class, 'index']); 
+    Route::get('/{id}', [ProductController::class, 'show']);   
+});
+
+// Protected routes (cần đăng nhập admin)
+Route::middleware(['auth:sanctum', 'admin'])->prefix('categories')->group(function () {
+    Route::get('/', [App\Http\Controllers\CategoryController::class, 'index']);
+    Route::post('/', [App\Http\Controllers\CategoryController::class, 'store']);       
+    Route::put('/{id}', [App\Http\Controllers\CategoryController::class, 'update']);  
+    Route::delete('/{id}', [App\Http\Controllers\CategoryController::class, 'destroy']); 
+});
 
 Route::middleware(['auth:sanctum', 'admin'])->prefix('products')->group(function () {
-    Route::get('/', [ProductController::class, 'index']); 
     Route::post('/', [ProductController::class, 'store']);       
-    Route::get('/{id}', [ProductController::class, 'show']);   
     Route::put('/{id}', [ProductController::class, 'update']);  
-    Route::delete('/{id}', [ProductController::class, 'destroy']); 
+    Route::delete('/{id}', [ProductController::class, 'destroy']);
 });
 
 Route::post('/product-coupons', [App\Http\Controllers\ProductCouponController::class, 'attachCoupon']);

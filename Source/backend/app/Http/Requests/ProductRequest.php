@@ -34,7 +34,17 @@ class ProductRequest extends FormRequest
             'review_count' => 'nullable|integer|min:0',
             'seo_title' => 'nullable|string|max:255',
             'seo_description' => 'nullable|string|max:255',
-            'is_delete' => 'required|boolean',
+            // Optional: colors array
+            'colors' => 'nullable|array',
+            'colors.*.name' => 'string|max:255',
+            'colors.*.hex' => 'string|regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/',
+            // Optional: specs array
+            'specs' => 'nullable|array',
+            'specs.*.label' => 'string|max:255',
+            'specs.*.value' => 'string|max:255',
+            // Optional: storage array
+            'storage' => 'nullable|array',
+            'storage.*' => 'string|max:255',
         ];
     }
 }
