@@ -126,7 +126,7 @@ export const getAvatarFromName = (name: string): string => {
 };
 
 export const formatDate = (dateString: string | null | undefined): string => {
-  if (!dateString) return "Chưa có";
+  if (!dateString) return "Chưa cập nhật";
   try {
     const date = new Date(dateString);
     return date.toLocaleDateString('vi-VN', {
@@ -135,6 +135,6 @@ export const formatDate = (dateString: string | null | undefined): string => {
       day: '2-digit'
     });
   } catch (error) {
-    return dateString || "Chưa có";
+    return dateString || "Chưa cập nhật";
   }
 };

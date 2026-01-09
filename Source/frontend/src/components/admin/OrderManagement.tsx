@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search,
   Eye,
@@ -10,36 +10,72 @@ import {
   Clock,
   XCircle,
   Filter,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+  Loader2,
+  AlertCircle,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
+} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
+import { orderAPI } from '@/services/order';
 
-interface OrderItem {
+interface OrderItemDetail {
+  product_id: number;
   name: string;
   quantity: number;
-  price: number;
+  price: string;
+  price_raw: number;
+  subtotal: string;
+  subtotal_raw: number;
+  image?: string;
+}
+
+interface OrderDetail {
+  id: string;
+  raw_id: number;
+  customer: string;
+  email: string;
+  phone: string;
+  address: string;
+  subtotal: string;
+  subtotal_raw: number;
+  discount: string;
+  discount_raw: number;
+  shipping_fee: string;
+  shipping_fee_raw: number;
+  total_amount: string;
+  total_raw: number;
+  coupon_code: string | null;
+  coupon_data: {
+    code: string;
+    type: string;
+    value: number;
+    min_order_amount: number | null;
+    is_active?: number;
+    is_delete?: number;
+    warning?: string;
+    error?: string;
+  } | null;
+  status: string;
+  status_key: string;
+  payment_method: string;
+  tracking_number: string;
+  created_at: string;
 }
 
 interface Order {
@@ -48,127 +84,252 @@ interface Order {
   email: string;
   phone: string;
   address: string;
-  items: OrderItem[];
-  total: number;
-  status: "pending" | "confirmed" | "shipping" | "completed" | "cancelled";
-  paymentMethod: string;
-  createdAt: string;
+  items: OrderItemDetail[];
+  subtotal: string;
+  subtotal_raw: number;
+  discount: string;
+  discount_raw: number;
+  shipping_fee: string;
+  shipping_fee_raw: number;
+  total_amount: string;
+  total_raw: number;
+  coupon_code: string | null;
+  coupon_data: {
+    code: string;
+    type: string;
+    value: number;
+    min_order_amount: number | null;
+    is_active?: number;
+    is_delete?: number;
+    warning?: string;
+    error?: string;
+  } | null;
+  status: string;
+  status_key: string;
+  payment_method: string;
+  created_at: string;
+  raw_id: number;
 }
 
-const mockOrders: Order[] = [
-  {
-    id: "#ORD-12345",
-    customer: "Nguyễn Văn A",
-    email: "nguyenvana@email.com",
-    phone: "0901234567",
-    address: "123 Nguyễn Huệ, Q.1, TP.HCM",
-    items: [
-      { name: "iPhone 15 Pro Max 256GB", quantity: 1, price: 34990000 },
-      { name: "AirPods Pro 2", quantity: 1, price: 6990000 },
-    ],
-    total: 41980000,
-    status: "pending",
-    paymentMethod: "COD",
-    createdAt: "2024-01-15 10:30",
-  },
-  {
-    id: "#ORD-12344",
-    customer: "Trần Thị B",
-    email: "tranthib@email.com",
-    phone: "0912345678",
-    address: "456 Lê Lợi, Q.3, TP.HCM",
-    items: [{ name: "MacBook Pro 14\" M3 Pro", quantity: 1, price: 49990000 }],
-    total: 49990000,
-    status: "confirmed",
-    paymentMethod: "Banking",
-    createdAt: "2024-01-15 09:15",
-  },
-  {
-    id: "#ORD-12343",
-    customer: "Lê Văn C",
-    email: "levanc@email.com",
-    phone: "0923456789",
-    address: "789 Điện Biên Phủ, Q.Bình Thạnh, TP.HCM",
-    items: [
-      { name: "iPad Pro 12.9\" M2", quantity: 1, price: 28990000 },
-      { name: "Apple Pencil 2", quantity: 1, price: 3490000 },
-    ],
-    total: 32480000,
-    status: "shipping",
-    paymentMethod: "MoMo",
-    createdAt: "2024-01-14 16:45",
-  },
-  {
-    id: "#ORD-12342",
-    customer: "Phạm Thị D",
-    email: "phamthid@email.com",
-    phone: "0934567890",
-    address: "321 Võ Văn Tần, Q.3, TP.HCM",
-    items: [{ name: "iPhone 15 128GB", quantity: 2, price: 24990000 }],
-    total: 49980000,
-    status: "completed",
-    paymentMethod: "Credit Card",
-    createdAt: "2024-01-14 11:20",
-  },
-  {
-    id: "#ORD-12341",
-    customer: "Hoàng Văn E",
-    email: "hoangvane@email.com",
-    phone: "0945678901",
-    address: "654 Cách Mạng Tháng 8, Q.10, TP.HCM",
-    items: [{ name: "MacBook Air 15\" M2", quantity: 1, price: 32990000 }],
-    total: 32990000,
-    status: "cancelled",
-    paymentMethod: "ZaloPay",
-    createdAt: "2024-01-13 14:00",
-  },
-];
-
 const statusConfig = {
-  pending: { label: "Chờ xác nhận", color: "bg-amber-100 text-amber-700", icon: Clock },
-  confirmed: { label: "Đã xác nhận", color: "bg-blue-100 text-blue-700", icon: Package },
-  shipping: { label: "Đang giao", color: "bg-violet-100 text-violet-700", icon: Truck },
-  completed: { label: "Hoàn thành", color: "bg-emerald-100 text-emerald-700", icon: CheckCircle },
-  cancelled: { label: "Đã hủy", color: "bg-destructive/10 text-destructive", icon: XCircle },
+  'Chờ xác nhận': {
+    label: 'Chờ xác nhận',
+    color: 'bg-amber-100 text-amber-700',
+    icon: Clock,
+  },
+  'Đã xác nhận': {
+    label: 'Đã xác nhận',
+    color: 'bg-blue-100 text-blue-700',
+    icon: Package,
+  },
+  'Đang giao': {
+    label: 'Đang giao',
+    color: 'bg-violet-100 text-violet-700',
+    icon: Truck,
+  },
+  'Hoàn thành': {
+    label: 'Hoàn thành',
+    color: 'bg-emerald-100 text-emerald-700',
+    icon: CheckCircle,
+  },
+  'Đã hủy': {
+    label: 'Đã hủy',
+    color: 'bg-destructive/10 text-destructive',
+    icon: XCircle,
+  },
 };
 
-const formatPrice = (price: number) => {
-  return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(price);
+const getRawIdFromFormattedId = (formattedId: string): number => {
+  const matches = formattedId.match(/#ORD-(\d+)/);
+  return matches ? parseInt(matches[1], 10) : 0;
 };
 
 const OrderManagement = () => {
-  const [orders, setOrders] = useState<Order[]>(mockOrders);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState<string>("all");
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [selectedOrderDetail, setSelectedOrderDetail] = useState<OrderDetail | null>(null);
+  const [selectedOrderItems, setSelectedOrderItems] = useState<OrderItemDetail[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [detailLoading, setDetailLoading] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        setLoading(true);
+        const res = await orderAPI.getOrders();
+
+        const transformedOrders: Order[] = res.data.map((order: any) => {
+          const rawId = order.raw_id || getRawIdFromFormattedId(order.id) || 0;
+
+          return {
+            id: order.id || `#ORD-${String(rawId).padStart(3, '0')}`,
+            customer: order.customer || '',
+            email: order.email || '',
+            phone: order.phone || 'Chưa cập nhật',
+            address: order.address || 'Chưa cập nhật',
+            items: order.items || [],
+            subtotal: order.subtotal || '0 đ',
+            subtotal_raw: order.subtotal_raw || 0,
+            discount: order.discount || '0 đ',
+            discount_raw: order.discount_raw || 0,
+            shipping_fee: order.shipping_fee || '0 đ',
+            shipping_fee_raw: order.shipping_fee_raw || 0,
+            total_amount: order.total_amount || '0 đ',
+            total_raw: order.total_raw || 0,
+            coupon_code: order.coupon_code || null,
+            coupon_data: order.coupon_data || null,
+            status: order.status || 'Chờ xác nhận',
+            status_key: order.status_key || order.status || 'Chờ xác nhận',
+            payment_method: order.payment_method || 'COD',
+            created_at: order.created_at
+              ? new Date(order.created_at).toLocaleString('vi-VN', {
+                  hour12: false,
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })
+              : 'Chưa cập nhật',
+            raw_id: rawId,
+          };
+        });
+
+        setOrders(transformedOrders);
+      } catch (error) {
+        console.error('Lỗi tải đơn hàng', error);
+        toast({
+          title: 'Lỗi',
+          description: 'Không thể tải danh sách đơn hàng',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, [toast]);
+
+  const handleViewDetail = async (order: Order) => {
+    try {
+      setDetailLoading(true);
+      const rawId = order.raw_id || getRawIdFromFormattedId(order.id);
+
+      if (!rawId) {
+        toast({
+          title: 'Lỗi',
+          description: 'Không tìm thấy ID đơn hàng',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const res = await orderAPI.getOrderDetail(rawId);
+
+      if (res.success && res.data) {
+        setSelectedOrderDetail(res.data.order);
+        setSelectedOrderItems(res.data.items || []);
+      } else {
+        toast({
+          title: 'Lỗi',
+          description: res.message || 'Không thể tải chi tiết đơn hàng',
+          variant: 'destructive',
+        });
+      }
+    } catch (error: any) {
+      console.error('Lỗi tải chi tiết đơn hàng', error);
+      toast({
+        title: 'Lỗi',
+        description: error.response?.data?.message || 'Không thể tải chi tiết đơn hàng',
+        variant: 'destructive',
+      });
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
+  const handleUpdateStatus = async (order: Order, newStatus: string) => {
+    try {
+      const rawId = order.raw_id || getRawIdFromFormattedId(order.id);
+
+      if (!rawId) {
+        toast({
+          title: 'Lỗi',
+          description: 'Không tìm thấy ID đơn hàng',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      await orderAPI.updateOrderStatus(rawId, newStatus);
+
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === order.id
+            ? {
+                ...o,
+                status: newStatus,
+                status_key: newStatus,
+              }
+            : o,
+        ),
+      );
+
+      if (selectedOrderDetail && selectedOrderDetail.raw_id === rawId) {
+        setSelectedOrderDetail((prev) =>
+          prev
+            ? {
+                ...prev,
+                status: newStatus,
+                status_key: newStatus,
+              }
+            : null,
+        );
+      }
+
+      toast({
+        title: 'Cập nhật thành công',
+        description: `Đơn hàng ${order.id} đã được cập nhật trạng thái thành "${newStatus}"`,
+      });
+    } catch (error) {
+      console.error('Lỗi cập nhật trạng thái', error);
+      toast({
+        title: 'Cập nhật thất bại',
+        description: 'Đã có lỗi xảy ra khi cập nhật trạng thái',
+        variant: 'destructive',
+      });
+    }
+  };
 
   const filteredOrders = orders.filter((order) => {
     const matchesSearch =
       order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.customer.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterStatus === "all" || order.status === filterStatus;
+      order.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.email.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesFilter = filterStatus === 'all' || order.status === filterStatus;
+
     return matchesSearch && matchesFilter;
   });
 
-  const handleUpdateStatus = (orderId: string, newStatus: Order["status"]) => {
-    setOrders((prev) =>
-      prev.map((order) =>
-        order.id === orderId ? { ...order, status: newStatus } : order
-      )
-    );
-    toast({
-      title: "Cập nhật thành công",
-      description: `Đơn hàng ${orderId} đã được cập nhật trạng thái`,
-    });
-  };
-
   const orderStats = {
     total: orders.length,
-    pending: orders.filter((o) => o.status === "pending").length,
-    shipping: orders.filter((o) => o.status === "shipping").length,
-    completed: orders.filter((o) => o.status === "completed").length,
+    pending: orders.filter((o) => o.status === 'Chờ xác nhận').length,
+    shipping: orders.filter((o) => o.status === 'Đang giao').length,
+    completed: orders.filter((o) => o.status === 'Hoàn thành').length,
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Đang tải đơn hàng...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -238,11 +399,11 @@ const OrderManagement = () => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tất cả</SelectItem>
-            <SelectItem value="pending">Chờ xác nhận</SelectItem>
-            <SelectItem value="confirmed">Đã xác nhận</SelectItem>
-            <SelectItem value="shipping">Đang giao</SelectItem>
-            <SelectItem value="completed">Hoàn thành</SelectItem>
-            <SelectItem value="cancelled">Đã hủy</SelectItem>
+            <SelectItem value="Chờ xác nhận">Chờ xác nhận</SelectItem>
+            <SelectItem value="Đã xác nhận">Đã xác nhận</SelectItem>
+            <SelectItem value="Đang giao">Đang giao</SelectItem>
+            <SelectItem value="Hoàn thành">Hoàn thành</SelectItem>
+            <SelectItem value="Đã hủy">Đã hủy</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -257,90 +418,130 @@ const OrderManagement = () => {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Mã đơn</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Khách hàng</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Tổng tiền</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Thanh toán</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Trạng thái</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Ngày tạo</th>
-                  <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Thao tác</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                    Mã đơn
+                  </th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                    Khách hàng
+                  </th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                    Tổng tiền
+                  </th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                    Thanh toán
+                  </th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                    Trạng thái
+                  </th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                    Ngày tạo
+                  </th>
+                  <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">
+                    Thao tác
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 <AnimatePresence>
-                  {filteredOrders.map((order) => {
-                    const StatusIcon = statusConfig[order.status].icon;
-                    return (
-                      <motion.tr
-                        key={order.id}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="border-b border-border last:border-0 hover:bg-muted/50 transition-colors"
-                      >
-                        <td className="py-3 px-4 text-sm font-medium">{order.id}</td>
-                        <td className="py-3 px-4">
-                          <div>
-                            <p className="text-sm font-medium">{order.customer}</p>
-                            <p className="text-xs text-muted-foreground">{order.phone}</p>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4 text-sm font-medium">{formatPrice(order.total)}</td>
-                        <td className="py-3 px-4 text-sm">{order.paymentMethod}</td>
-                        <td className="py-3 px-4">
-                          <span
-                            className={`inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-full ${statusConfig[order.status].color}`}
-                          >
-                            <StatusIcon className="h-3 w-3" />
-                            {statusConfig[order.status].label}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-sm text-muted-foreground">{order.createdAt}</td>
-                        <td className="py-3 px-4 text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => setSelectedOrder(order)}>
-                                <Eye className="h-4 w-4 mr-2" />
-                                Xem chi tiết
-                              </DropdownMenuItem>
-                              {order.status === "pending" && (
-                                <DropdownMenuItem onClick={() => handleUpdateStatus(order.id, "confirmed")}>
-                                  <CheckCircle className="h-4 w-4 mr-2" />
-                                  Xác nhận đơn
-                                </DropdownMenuItem>
+                  {filteredOrders.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-8 text-center text-muted-foreground">
+                        {searchTerm
+                          ? 'Không tìm thấy đơn hàng nào phù hợp'
+                          : 'Chưa có đơn hàng nào'}
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredOrders.map((order) => {
+                      const StatusIcon =
+                        statusConfig[order.status as keyof typeof statusConfig]?.icon || Clock;
+                      const statusConfigItem =
+                        statusConfig[order.status as keyof typeof statusConfig];
+
+                      return (
+                        <motion.tr
+                          key={order.id}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="border-b border-border last:border-0 hover:bg-muted/50 transition-colors"
+                        >
+                          <td className="py-3 px-4 text-sm font-medium">{order.id}</td>
+                          <td className="py-3 px-4">
+                            <div>
+                              <p className="text-sm font-medium">{order.customer}</p>
+                              {order.phone && order.phone !== 'Chưa cập nhật' && (
+                                <p className="text-xs text-muted-foreground">{order.phone}</p>
                               )}
-                              {order.status === "confirmed" && (
-                                <DropdownMenuItem onClick={() => handleUpdateStatus(order.id, "shipping")}>
-                                  <Truck className="h-4 w-4 mr-2" />
-                                  Giao hàng
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 text-sm font-medium">{order.total_amount}</td>
+                          <td className="py-3 px-4 text-sm">{order.payment_method}</td>
+                          <td className="py-3 px-4">
+                            <span
+                              className={`inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-full ${
+                                statusConfigItem?.color || 'bg-gray-100 text-gray-700'
+                              }`}
+                            >
+                              <StatusIcon className="h-3 w-3" />
+                              {order.status}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-sm text-muted-foreground">
+                            {order.created_at}
+                          </td>
+                          <td className="py-3 px-4 text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleViewDetail(order)}>
+                                  <Eye className="h-4 w-4 mr-2" />
+                                  Xem chi tiết
                                 </DropdownMenuItem>
-                              )}
-                              {order.status === "shipping" && (
-                                <DropdownMenuItem onClick={() => handleUpdateStatus(order.id, "completed")}>
-                                  <CheckCircle className="h-4 w-4 mr-2" />
-                                  Hoàn thành
-                                </DropdownMenuItem>
-                              )}
-                              {order.status !== "completed" && order.status !== "cancelled" && (
-                                <DropdownMenuItem
-                                  className="text-destructive"
-                                  onClick={() => handleUpdateStatus(order.id, "cancelled")}
-                                >
-                                  <XCircle className="h-4 w-4 mr-2" />
-                                  Hủy đơn
-                                </DropdownMenuItem>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </td>
-                      </motion.tr>
-                    );
-                  })}
+                                {order.status === 'Chờ xác nhận' && (
+                                  <DropdownMenuItem
+                                    onClick={() => handleUpdateStatus(order, 'Đã xác nhận')}
+                                  >
+                                    <CheckCircle className="h-4 w-4 mr-2" />
+                                    Xác nhận đơn
+                                  </DropdownMenuItem>
+                                )}
+                                {order.status === 'Đã xác nhận' && (
+                                  <DropdownMenuItem
+                                    onClick={() => handleUpdateStatus(order, 'Đang giao')}
+                                  >
+                                    <Truck className="h-4 w-4 mr-2" />
+                                    Giao hàng
+                                  </DropdownMenuItem>
+                                )}
+                                {order.status === 'Đang giao' && (
+                                  <DropdownMenuItem
+                                    onClick={() => handleUpdateStatus(order, 'Hoàn thành')}
+                                  >
+                                    <CheckCircle className="h-4 w-4 mr-2" />
+                                    Hoàn thành
+                                  </DropdownMenuItem>
+                                )}
+                                {order.status !== 'Hoàn thành' && order.status !== 'Đã hủy' && (
+                                  <DropdownMenuItem
+                                    className="text-destructive"
+                                    onClick={() => handleUpdateStatus(order, 'Đã hủy')}
+                                  >
+                                    <XCircle className="h-4 w-4 mr-2" />
+                                    Hủy đơn
+                                  </DropdownMenuItem>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </td>
+                        </motion.tr>
+                      );
+                    })
+                  )}
                 </AnimatePresence>
               </tbody>
             </table>
@@ -349,60 +550,213 @@ const OrderManagement = () => {
       </Card>
 
       {/* Order Detail Dialog */}
-      <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
-        <DialogContent className="max-w-lg">
+      <Dialog
+        open={!!selectedOrderDetail}
+        onOpenChange={() => {
+          setSelectedOrderDetail(null);
+          setSelectedOrderItems([]);
+        }}
+      >
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Chi tiết đơn hàng {selectedOrder?.id}</DialogTitle>
+            <DialogTitle>Chi tiết đơn hàng {selectedOrderDetail?.id}</DialogTitle>
           </DialogHeader>
-          {selectedOrder && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Khách hàng</p>
-                  <p className="font-medium">{selectedOrder.customer}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Điện thoại</p>
-                  <p className="font-medium">{selectedOrder.phone}</p>
-                </div>
-                <div className="col-span-2">
-                  <p className="text-sm text-muted-foreground">Email</p>
-                  <p className="font-medium">{selectedOrder.email}</p>
-                </div>
-                <div className="col-span-2">
-                  <p className="text-sm text-muted-foreground">Địa chỉ</p>
-                  <p className="font-medium">{selectedOrder.address}</p>
-                </div>
-              </div>
-
-              <div className="border-t border-border pt-4">
-                <p className="text-sm font-medium mb-3">Sản phẩm</p>
-                <div className="space-y-2">
-                  {selectedOrder.items.map((item, index) => (
-                    <div key={index} className="flex justify-between text-sm">
-                      <span>
-                        {item.name} x{item.quantity}
-                      </span>
-                      <span className="font-medium">{formatPrice(item.price * item.quantity)}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex justify-between mt-4 pt-4 border-t border-border font-bold">
-                  <span>Tổng cộng</span>
-                  <span className="text-accent">{formatPrice(selectedOrder.total)}</span>
-                </div>
-              </div>
-
-              <div className="flex justify-between items-center border-t border-border pt-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Phương thức thanh toán</p>
-                  <p className="font-medium">{selectedOrder.paymentMethod}</p>
-                </div>
-                <Badge className={statusConfig[selectedOrder.status].color}>
-                  {statusConfig[selectedOrder.status].label}
-                </Badge>
-              </div>
+          {detailLoading ? (
+            <div className="flex items-center justify-center h-64">
+              <Loader2 className="h-8 w-8 animate-spin" />
+              <span className="ml-2">Đang tải chi tiết...</span>
             </div>
+          ) : (
+            selectedOrderDetail && (
+              <div className="space-y-6">
+                {/* Thông tin khách hàng */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Khách hàng</p>
+                    <p className="font-medium text-lg">{selectedOrderDetail.customer}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Điện thoại</p>
+                    <p className="font-medium">{selectedOrderDetail.phone}</p>
+                  </div>
+                  <div className="md:col-span-2">
+                    <p className="text-sm text-muted-foreground">Email</p>
+                    <p className="font-medium">{selectedOrderDetail.email}</p>
+                  </div>
+                  <div className="md:col-span-2">
+                    <p className="text-sm text-muted-foreground">Địa chỉ</p>
+                    <p className="font-medium">{selectedOrderDetail.address}</p>
+                  </div>
+                </div>
+
+                {/* Sản phẩm */}
+                <div className="border-t border-border pt-4">
+                  <h3 className="text-lg font-semibold mb-4">Sản phẩm</h3>
+                  <div className="space-y-3">
+                    {selectedOrderItems.length > 0 ? (
+                      selectedOrderItems.map((item, index) => (
+                        <div
+                          key={index}
+                          className="flex justify-between items-start p-3 border rounded-lg"
+                        >
+                          <div className="flex-1">
+                            <p className="font-medium">{item.name}</p>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              Số lượng: {item.quantity}
+                            </p>
+                            <p className="text-sm text-muted-foreground">Đơn giá: {item.price}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-semibold">{item.subtotal}</p>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-center text-muted-foreground py-4">Không có sản phẩm</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Tổng cộng */}
+                <div className="border-t border-border pt-4 space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Tổng tiền hàng:</span>
+                    <span className="font-medium">{selectedOrderDetail.subtotal}</span>
+                  </div>
+
+                  {/* Phần coupon */}
+                  {selectedOrderDetail.coupon_code && (
+                    <>
+                      <div
+                        className={`p-3 rounded-lg ${
+                          selectedOrderDetail.coupon_data?.warning ||
+                          selectedOrderDetail.coupon_data?.error
+                            ? 'bg-red-50 border border-red-200'
+                            : 'bg-amber-50 border border-amber-200'
+                        }`}
+                      >
+                        <div className="flex justify-between items-center">
+                          <span className="text-muted-foreground font-medium">Mã giảm giá:</span>
+                          <span
+                            className={`font-bold ${
+                              selectedOrderDetail.coupon_data?.warning ||
+                              selectedOrderDetail.coupon_data?.error
+                                ? 'text-red-700'
+                                : 'text-amber-700'
+                            }`}
+                          >
+                            {selectedOrderDetail.coupon_code}
+                          </span>
+                        </div>
+                        {selectedOrderDetail.coupon_data ? (
+                          <>
+                            <p
+                              className={`text-sm ${
+                                selectedOrderDetail.coupon_data?.warning ||
+                                selectedOrderDetail.coupon_data?.error
+                                  ? 'text-red-600'
+                                  : 'text-amber-600'
+                              } mt-2`}
+                            >
+                              {selectedOrderDetail.coupon_data.type === 'percentage'
+                                ? `Giảm ${selectedOrderDetail.coupon_data.value}% đơn hàng`
+                                : `Giảm ${Number(
+                                    selectedOrderDetail.coupon_data.value,
+                                  ).toLocaleString('vi-VN')} đ`}
+                            </p>
+                            {selectedOrderDetail.coupon_data.min_order_amount && (
+                              <p className="text-xs text-gray-500 mt-1">
+                                Áp dụng cho đơn từ{' '}
+                                {Number(
+                                  selectedOrderDetail.coupon_data.min_order_amount,
+                                ).toLocaleString('vi-VN')}{' '}
+                                đ
+                              </p>
+                            )}
+                            {/* Hiển thị cảnh báo nếu có */}
+                            {selectedOrderDetail.coupon_data.warning && (
+                              <div className="mt-2 p-2 bg-red-100 border border-red-300 rounded">
+                                <p className="text-xs text-red-700 flex items-center gap-1">
+                                  <AlertCircle className="h-3 w-3" />
+                                  {selectedOrderDetail.coupon_data.warning}
+                                </p>
+                              </div>
+                            )}
+                            {selectedOrderDetail.coupon_data.error && (
+                              <div className="mt-2 p-2 bg-red-100 border border-red-300 rounded">
+                                <p className="text-xs text-red-700 flex items-center gap-1">
+                                  <AlertCircle className="h-3 w-3" />
+                                  {selectedOrderDetail.coupon_data.error}
+                                </p>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <p className="text-sm text-amber-600 mt-2">
+                            Thông tin mã giảm giá không khả dụng
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Dòng Giảm giá */}
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Giảm giá:</span>
+                        <span
+                          className={
+                            selectedOrderDetail.discount_raw > 0
+                              ? 'text-emerald-600 font-bold'
+                              : 'text-gray-500'
+                          }
+                        >
+                          {selectedOrderDetail.discount_raw > 0 ? '-' : ''}
+                          {selectedOrderDetail.discount}
+                        </span>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Phí vận chuyển */}
+                  {selectedOrderDetail.shipping_fee_raw > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Phí vận chuyển:</span>
+                      <span className="font-medium">+{selectedOrderDetail.shipping_fee}</span>
+                    </div>
+                  )}
+
+                  {/* Tổng thanh toán */}
+                  <div className="flex justify-between text-lg font-bold border-t border-border pt-2">
+                    <span>Tổng thanh toán:</span>
+                    <span className="text-primary text-xl">{selectedOrderDetail.total_amount}</span>
+                  </div>
+                </div>
+
+                {/* Thông tin thanh toán và trạng thái */}
+                <div className="border-t border-border pt-4">
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div className="space-y-2">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Phương thức thanh toán</p>
+                        <p className="font-medium">{selectedOrderDetail.payment_method}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Ngày tạo</p>
+                        <p className="font-medium">{selectedOrderDetail.created_at}</p>
+                      </div>
+                    </div>
+                    {selectedOrderDetail.status && (
+                      <Badge
+                        className={`text-base md:text-lg px-4 py-2 ${
+                          statusConfig[selectedOrderDetail.status as keyof typeof statusConfig]
+                            ?.color || statusConfig['Chờ xác nhận'].color
+                        }`}
+                      >
+                        {selectedOrderDetail.status}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )
           )}
         </DialogContent>
       </Dialog>

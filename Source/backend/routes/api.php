@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\AdminOrderController;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Admin\CustomerExportController;
+use App\Http\Controllers\OrderController;
 
 
 Route::post('/product-colors', [App\Http\Controllers\productColorController::class, 'store']);
@@ -123,4 +124,16 @@ Route::get('/test/db', function () {
 });
 
 Route::get('/admin/customers/export', [CustomerExportController::class, 'export']);
+
+Route::prefix('admin')->group(function () {
+    Route::get('/orders', [OrderController::class, 'index']);
+});
+
+
+Route::get('/admin/orders/{id}', [OrderController::class, 'show']);
+Route::prefix('admin')->group(function () {
+    Route::patch('orders/{id}/status', [OrderController::class, 'updateStatus']);
+});
+
+Route::post('/coupon/validate', [OrderController::class, 'validateCoupon']);
 
