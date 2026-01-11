@@ -13,17 +13,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { formatPrice } from "@/data/products";
 import { ScrollArea } from "@radix-ui/react-scroll-area";
+import { a } from "node_modules/framer-motion/dist/types.d-DagZKalS";
 
 // Constants
 const PRESET_COLORS = [
-  { name: "Đen", hex: "#000000" },
-  { name: "Trắng", hex: "#FFFFFF" },
-  { name: "Xám", hex: "#A9A9A9" },
-  { name: "Vàng", hex: "#FFD700" },
-  { name: "Hồng", hex: "#FF69B4" },
+  { name: "Đen", hex_code: "#000000" },
+  { name: "Trắng", hex_code: "#FFFFFF" },
+  { name: "Xám", hex_code: "#A9A9A9" },
+  { name: "Vàng", hex_code: "#FFD700" },
+  { name: "Hồng", hex_code: "#FF69B4" },
 ];
-
-const PRESET_STORAGE = ["64GB", "128GB", "256GB", "512GB", "1TB"];
 
 const REQUIRED_SPECS = [
   { label: "Dung lượng", placeholder: "VD: 128GB, 256GB" },
@@ -47,7 +46,7 @@ interface Spec {
 interface Color {
   id?: number;
   name: string;
-  hex: string;
+  hex_code: string;
 }
 
 interface Storage {
@@ -96,7 +95,7 @@ const ProductManagement = () => {
     status: "1",
     description: "",
     imageUrl: "",
-    images: [] as string[],
+    images: [] as ProductImage[],
     colors: [] as Color[],
     storage: [] as string[],
     customStorage: "",
@@ -145,7 +144,13 @@ const ProductManagement = () => {
     if (formData.imageUrl?.trim()) {
       setFormData((prev) => ({
         ...prev,
-        images: [...prev.images, prev.imageUrl],
+        images: [
+          ...prev.images,
+          {
+            image_url: prev.imageUrl,
+            is_main: prev.images.length === 0,
+          },
+        ],
         imageUrl: "",
       }));
     }
@@ -160,41 +165,24 @@ const ProductManagement = () => {
 
   // Color handling
   const toggleColor = (color: Color) => {
-    const exists = formData.colors.some((c) => c.hex === color.hex);
+    const exists = formData.colors.some((c) => c.hex_code === color.hex_code);
     setFormData((prev) => ({
       ...prev,
       colors: exists
-        ? prev.colors.filter((c) => c.hex !== color.hex)
+        ? prev.colors.filter((c) => c.hex_code !== color.hex_code)
         : [...prev.colors, color],
     }));
   };
 
-  // Storage handling
-  const toggleStorage = (storage: string) => {
-    const exists = formData.storage.includes(storage);
+  const handleRequiredSpecChange = (index: number, value: string) => {
     setFormData((prev) => ({
       ...prev,
-      storage: exists
-        ? prev.storage.filter((s) => s !== storage)
-        : [...prev.storage, storage],
+      requiredSpecs: prev.requiredSpecs.map((spec, i) =>
+        i === index ? { ...spec, value } : spec
+      ),
     }));
   };
 
-  const addCustomStorage = () => {
-    if (formData.customStorage && !formData.storage.includes(formData.customStorage)) {
-      setFormData((prev) => ({
-        ...prev,
-        storage: [...prev.storage, prev.customStorage],
-        customStorage: "",
-      }));
-    }
-  };
-
-  const handleRequiredSpecChange = (index: number, value: string) => {
-    const newSpecs = [...formData.requiredSpecs];
-    newSpecs[index].value = value;
-    setFormData({ ...formData, requiredSpecs: newSpecs });
-  };
 
   const handleAddAdditionalSpec = () => {
     setFormData({
@@ -210,113 +198,122 @@ const ProductManagement = () => {
     });
   };
 
-  const handleAdditionalSpecChange = (index: number, field: "label" | "value", value: string) => {
-    const newSpecs = [...formData.additionalSpecs];
-    newSpecs[index][field] = value;
-    setFormData({ ...formData, additionalSpecs: newSpecs });
+  const handleAdditionalSpecChange = (
+    index: number,
+    field: "label" | "value",
+    value: string
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      additionalSpecs: prev.additionalSpecs.map((spec, i) =>
+        i === index ? { ...spec, [field]: value } : spec
+      ),
+    }));
   };
 
   // Handle form submit (Add / Edit)
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (!formData.name || !formData.category_id || !formData.original_price) {
-    toast({ title: "Lỗi", description: "Vui lòng điền đầy đủ thông tin", variant: "destructive" });
-    return;
-  }
-
-  // Payload chính cho product
-  const payload = {
-    name: formData.name,
-    description: formData.description,
-    price: parseInt(formData.price || formData.original_price),
-    original_price: parseInt(formData.original_price),
-    status: parseInt(formData.status),
-    category_id: parseInt(formData.category_id),
-    is_featured: false,
-    is_new: false,
-    rating: 5.0,
-    review_count: 200,
-  };
-
-  try {
-    // --- Thêm mới product ---
-    const res = await api.post("/products", payload);
-    const newProductId = res.data.id;
-
-    // --- Thêm images ---
-    if (formData.images.length > 0) {
-      for (let i = 0; i < formData.images.length; i++) {
-        const image = formData.images[i];
-        // Nếu là URL thì chỉ cần JSON
-        await api.post("/product-images", {
-          product_id: newProductId,
-          image_url: image,
-          is_main: i === 0 ? 1 : 0,
-        });
-      }
-    }
-
-    // --- Thêm colors ---
-    if (formData.colors.length > 0) {
-      for (const color of formData.colors) {
-        await api.post("/product-colors", {
-          product_id: newProductId,
-          name: color.name,
-          hex: color.hex,
-        });
-      }
-    }
-
-    // --- Thêm required specs ---
-    for (const spec of formData.requiredSpecs) {
-      if (spec.value) {
-        await api.post("/product-specs", {
-          product_id: newProductId,
-          label: spec.label,
-          value: spec.value,
-        });
-      }
-    }
-
-    // --- Thêm additional specs ---
-    for (const spec of formData.additionalSpecs) {
-      if (spec.label && spec.value) {
-        await api.post("/product-specs", {
-          product_id: newProductId,
-          label: spec.label,
-          value: spec.value,
-        });
-      }
-    }
-
-    // --- Thêm storage ---
-    for (const storage of formData.storage) {
-      await api.post("/product-storages", {
-        product_id: newProductId,
-        storage: storage,
+    if (!formData.name || !formData.category_id || !formData.original_price) {
+      toast({
+        title: "Lỗi",
+        description: "Vui lòng điền đầy đủ thông tin",
+        variant: "destructive",
       });
+      return;
     }
-console.table(formData.images);
 
-    // --- Reload products và toast thành công ---
-    fetchProducts();
-    toast({
-      title: "Thành công",
-      description: "Thêm sản phẩm mới thành công",
-    });
+    const payload = {
+      name: formData.name,
+      description: formData.description,
+      price: Number(formData.price || formData.original_price),
+      original_price:
+        formData.original_price !== ""
+          ? Number(formData.original_price)
+          : null,
+      status: Number(formData.status),
+      category_id: Number(formData.category_id),
+      rating: 5,
+      review_count: 200,
 
-    // Reset form
-    setIsAddDialogOpen(false);
-    setEditingProduct(null);
-    resetForm();
+      images: formData.images.map((img, i) => ({
+        image_url: img.image_url,
+        is_main: i === 0,
+      })),
 
-  } catch (error: any) {
-    console.error("Lỗi khi lưu sản phẩm:", error);
-    toast({ title: "Lỗi", description: "Thao tác thất bại", variant: "destructive" });
-  }
-};
+      colors: formData.colors,
 
+      specs: [
+        ...formData.requiredSpecs,
+        ...formData.additionalSpecs,
+      ].filter(s => s.value?.trim()),
+    };
+
+    try {
+      let productId: number;
+
+      /* ================= ADD ================= */
+      if (!editingProduct) {
+        const res = await api.post("/products", payload);
+        productId = res.data.id;
+      }
+      /* ================= EDIT ================= */
+      else {
+        await api.put(`/products/${editingProduct.id}`, payload);
+        productId = editingProduct.id;
+      }
+
+      /* ========== IMAGES (UPSERT) ========== */
+      for (let i = 0; i < formData.images.length; i++) {
+        const img = formData.images[i];
+        if (typeof img === "string") continue;
+        // hiện tại bạn chưa xử lý image ở đây cũng không sao
+      }
+
+      fetchProducts();
+
+      toast({
+        title: "Thành công",
+        description: editingProduct
+          ? "Cập nhật sản phẩm thành công"
+          : "Thêm sản phẩm mới thành công",
+      });
+
+      setIsAddDialogOpen(false);
+      setEditingProduct(null);
+      resetForm();
+
+    } catch (error: any) {
+      console.group("❌ API ERROR");
+      console.error("Status:", error?.response?.status);
+      console.error("Data:", error?.response?.data);
+      console.error("Message:", error?.message);
+      console.groupEnd();
+
+      // Nếu là lỗi validate 422 từ Laravel
+      if (error?.response?.status === 422) {
+        const errors = error.response.data?.errors;
+
+        toast({
+          title: "Lỗi dữ liệu (422)",
+          description: errors
+            ? Object.values(errors).flat().join("\n")
+            : error.response.data?.message || "Dữ liệu không hợp lệ",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Lỗi hệ thống",
+          description:
+            error?.response?.data?.message ||
+            error?.message ||
+            "Có lỗi xảy ra",
+          variant: "destructive",
+        });
+      }
+    }
+  };
 
   // Reset form
   const resetForm = () => {
@@ -349,21 +346,42 @@ console.table(formData.images);
 
   // Open dialog for Edit
   const handleOpenEditDialog = (product: Product) => {
+    const productSpecs = product.specs || [];
+
+    // 1️⃣ map spec bắt buộc
+    const mappedRequiredSpecs = REQUIRED_SPECS.map((req) => {
+      const found = productSpecs.find((s) => s.label === req.label);
+      return {
+        label: req.label,
+        value: found?.value || "",
+      };
+    });
+
+    // 2️⃣ map spec thêm
+    const mappedAdditionalSpecs = productSpecs.filter(
+      (s) => !REQUIRED_SPECS.some((req) => req.label === s.label)
+    );
     setEditingProduct(product);
     setFormData({
       name: product.name,
       category_id: product.category_id.toString(),
-      original_price: product.original_price.toString(),
+      original_price: product.original_price ? product.original_price.toString() : "",
       price: product.price.toString(),
       status: product.status.toString(),
       description: product.description,
       imageUrl: "",
-      images: product.images?.map((img) => img.image_url) || [],
+      images:
+        product.images?.map((img) => ({
+          id: img.id,
+          image_url: img.image_url,
+          is_main: img.is_main,
+        })) || [],
       colors: product.colors || [],
       storage: product.storages?.map((s) => s.storage) || [],
       customStorage: "",
-      requiredSpecs: REQUIRED_SPECS.map((s) => ({ label: s.label, value: "" })),
-      additionalSpecs: [],
+      requiredSpecs: mappedRequiredSpecs,
+      additionalSpecs: mappedAdditionalSpecs,
+
       specs: product.specs || [],
       rating: product.rating,
       review_count: product.review_count,
@@ -608,7 +626,7 @@ console.table(formData.images);
                     {formData.images.map((img, index) => (
                       <div key={index} className="relative group aspect-square">
                         <img
-                          src={img}
+                          src={img.image_url}
                           alt={`Preview ${index + 1}`}
                           className="w-full h-full object-cover rounded-xl border border-border"
                         />
@@ -712,20 +730,20 @@ console.table(formData.images);
                   <Label className="text-sm font-medium">Màu sắc</Label>
                   <div className="flex flex-wrap gap-2">
                     {PRESET_COLORS.map((color) => {
-                      const isSelected = formData.colors.some((c) => c.hex === color.hex);
+                      const isSelected = formData.colors.some((c) => c.hex_code === color.hex_code);
                       return (
                         <button
-                          key={color.hex}
+                          key={color.hex_code}
                           type="button"
                           onClick={() => toggleColor(color)}
                           className={`relative w-8 h-8 rounded-full border-2 transition-all ${isSelected ? "border-accent scale-110" : "border-border hover:border-accent/50"
                             }`}
-                          style={{ backgroundColor: color.hex }}
+                          style={{ backgroundColor: color.hex_code }}
                           title={color.name}
                         >
                           {isSelected && (
                             <Check
-                              className={`absolute inset-0 m-auto h-4 w-4 ${color.hex === "#FFFFFF" || color.hex === "#FFD700"
+                              className={`absolute inset-0 m-auto h-4 w-4 ${color.hex_code === "#FFFFFF" || color.hex_code === "#FFD700"
                                 ? "text-black"
                                 : "text-white"
                                 }`}
@@ -734,67 +752,70 @@ console.table(formData.images);
                         </button>
                       );
                     })}
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              colors: [...prev.colors, { name: "", hex_code: "#000000" }],
+                            }))
+                          }
+                        >
+                          + Thêm màu
+                        </Button>
+                      </div>
+
+                      {formData.colors.map((color, index) => (
+                        <div key={index} className="flex gap-2 items-center">
+                          {/* Tên màu */}
+                          <Input
+                            placeholder="Tên màu (VD: Đen)"
+                            value={color.name}
+                            onChange={(e) => {
+                              const newColors = [...formData.colors];
+                              newColors[index].name = e.target.value;
+                              setFormData({ ...formData, colors: newColors });
+                            }}
+                          />
+
+                          {/* Mã HEX */}
+                          <Input
+                            type="color"
+                            value={color.hex_code}
+                            onChange={(e) => {
+                              const newColors = [...formData.colors];
+                              newColors[index].hex_code = e.target.value;
+                              setFormData({ ...formData, colors: newColors });
+                            }}
+                            className="w-14 p-1"
+                          />
+
+                          {/* Xóa */}
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            onClick={() =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                colors: prev.colors.filter((_, i) => i !== index),
+                              }))
+                            }
+                          >
+                            ✕
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+
                   </div>
                   {formData.colors.length > 0 && (
                     <p className="text-xs text-muted-foreground">
                       Đã chọn: {formData.colors.map((c) => c.name).join(", ")}
                     </p>
-                  )}
-                </div>
-
-                {/* Storage */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Dung lượng</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {PRESET_STORAGE.map((storage) => {
-                      const isSelected = formData.storage.includes(storage);
-                      return (
-                        <button
-                          key={storage}
-                          type="button"
-                          onClick={() => toggleStorage(storage)}
-                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${isSelected
-                            ? "bg-accent text-white"
-                            : "bg-background border border-border hover:border-accent"
-                            }`}
-                        >
-                          {storage}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <div className="flex gap-2 mt-2">
-                    <Input
-                      value={formData.customStorage}
-                      onChange={(e) => setFormData({ ...formData, customStorage: e.target.value })}
-                      placeholder="Thêm dung lượng khác..."
-                      className="rounded-xl flex-1"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={addCustomStorage}
-                      className="rounded-xl"
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  {formData.storage.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {formData.storage
-                        .filter((s) => !PRESET_STORAGE.includes(s))
-                        .map((s) => (
-                          <span
-                            key={s}
-                            className="inline-flex items-center gap-1 px-2 py-1 bg-accent/10 text-accent rounded-lg text-xs"
-                          >
-                            {s}
-                            <button type="button" onClick={() => toggleStorage(s)}>
-                              <X className="h-3 w-3" />
-                            </button>
-                          </span>
-                        ))}
-                    </div>
                   )}
                 </div>
               </div>

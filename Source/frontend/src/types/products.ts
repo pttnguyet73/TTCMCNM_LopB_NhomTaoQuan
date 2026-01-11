@@ -1,4 +1,6 @@
 
+// src/types/product.ts
+
 export interface Category {
   id: number;
   name: string;
@@ -10,7 +12,7 @@ export interface Category {
 export interface ProductImage {
   id: number;
   product_id: number;
-  image_url: string; 
+  image_url: string; // URL ảnh (string)
   is_main?: boolean;
   created_at?: string;
   updated_at?: string;
@@ -20,7 +22,7 @@ export interface ProductColor {
   id: number;
   product_id: number;
   color_name: string;
-  color_code?: string; 
+  color_code?: string; // ví dụ: #ffffff
   created_at?: string;
   updated_at?: string;
 }
@@ -35,6 +37,8 @@ export interface Product {
   stock?: number;
   category_id: number;
 
+
+  // Quan hệ
   category?: Category;
   images?: ProductImage[];
   colors?: ProductColor[];
@@ -43,6 +47,8 @@ export interface Product {
   updated_at?: string;
 }
 
+
+// Dùng khi tạo / cập nhật sản phẩm (POST, PUT)
 export interface ProductPayload {
   name: string;
   description?: string;

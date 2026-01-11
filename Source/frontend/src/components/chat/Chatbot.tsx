@@ -12,46 +12,7 @@ interface Message {
   timestamp: Date;
 }
 
-const quickReplies = [
-  'Tình trạng đơn hàng',
-  'Chính sách đổi trả',
-  'Phương thức thanh toán',
-  'Liên hệ hotline',
-];
-
-const botResponses: Record<string, string> = {
-  'xin chào': 'Xin chào! Tôi là trợ lý ảo của iStore. Tôi có thể giúp gì cho bạn hôm nay? 😊',
-  'hello': 'Xin chào! Tôi là trợ lý ảo của iStore. Tôi có thể giúp gì cho bạn hôm nay? 😊',
-  'hi': 'Xin chào! Tôi là trợ lý ảo của iStore. Tôi có thể giúp gì cho bạn hôm nay? 😊',
-  'tình trạng đơn hàng': 'Để kiểm tra tình trạng đơn hàng, bạn vui lòng đăng nhập vào tài khoản và vào mục "Lịch sử đơn hàng". Hoặc bạn có thể cung cấp mã đơn hàng để tôi hỗ trợ tra cứu.',
-  'đơn hàng': 'Để kiểm tra tình trạng đơn hàng, bạn vui lòng đăng nhập vào tài khoản và vào mục "Lịch sử đơn hàng". Hoặc bạn có thể cung cấp mã đơn hàng để tôi hỗ trợ tra cứu.',
-  'chính sách đổi trả': 'iStore hỗ trợ đổi trả trong vòng 30 ngày kể từ ngày mua hàng. Sản phẩm cần còn nguyên tem, phụ kiện và hóa đơn mua hàng. Phí đổi trả sẽ do iStore chi trả nếu lỗi từ nhà sản xuất.',
-  'đổi trả': 'iStore hỗ trợ đổi trả trong vòng 30 ngày kể từ ngày mua hàng. Sản phẩm cần còn nguyên tem, phụ kiện và hóa đơn mua hàng. Phí đổi trả sẽ do iStore chi trả nếu lỗi từ nhà sản xuất.',
-  'bảo hành': 'Tất cả sản phẩm tại iStore được bảo hành chính hãng 12 tháng. Đối với iPhone, iPad và Mac, bạn có thể mang đến bất kỳ cửa hàng iStore nào để được hỗ trợ.',
-  'phương thức thanh toán': 'iStore hỗ trợ nhiều phương thức thanh toán:\n• COD (thanh toán khi nhận hàng)\n• Internet Banking\n• Ví MoMo, ZaloPay\n• Thẻ tín dụng/ghi nợ Visa, Mastercard, JCB',
-  'thanh toán': 'iStore hỗ trợ nhiều phương thức thanh toán:\n• COD (thanh toán khi nhận hàng)\n• Internet Banking\n• Ví MoMo, ZaloPay\n• Thẻ tín dụng/ghi nợ Visa, Mastercard, JCB',
-  'liên hệ hotline': 'Bạn có thể liên hệ với chúng tôi qua:\n📞 Hotline: 1900 xxxx (8h-22h hàng ngày)\n📧 Email: support@istore.vn\n🏪 Hệ thống cửa hàng: istore.vn/cua-hang',
-  'hotline': 'Bạn có thể liên hệ với chúng tôi qua:\n📞 Hotline: 1900 xxxx (8h-22h hàng ngày)\n📧 Email: support@istore.vn\n🏪 Hệ thống cửa hàng: istore.vn/cua-hang',
-  'liên hệ': 'Bạn có thể liên hệ với chúng tôi qua:\n📞 Hotline: 1900 xxxx (8h-22h hàng ngày)\n📧 Email: support@istore.vn\n🏪 Hệ thống cửa hàng: istore.vn/cua-hang',
-  'giá': 'Giá sản phẩm tại iStore luôn cạnh tranh và được cập nhật liên tục. Bạn có thể xem giá chi tiết từng sản phẩm trên website hoặc liên hệ hotline để được báo giá tốt nhất.',
-  'khuyến mãi': 'Hiện tại iStore đang có nhiều chương trình khuyến mãi hấp dẫn! Sử dụng mã ISTORE10 để giảm 10% cho đơn hàng. Xem thêm ưu đãi tại trang chủ.',
-  'giảm giá': 'Hiện tại iStore đang có nhiều chương trình khuyến mãi hấp dẫn! Sử dụng mã ISTORE10 để giảm 10% cho đơn hàng. Xem thêm ưu đãi tại trang chủ.',
-  'mã giảm giá': 'Sử dụng mã ISTORE10 để được giảm 10% cho đơn hàng của bạn! Áp dụng trực tiếp khi thanh toán.',
-  'vận chuyển': 'iStore miễn phí vận chuyển cho đơn hàng từ 2 triệu đồng. Thời gian giao hàng:\n• Nội thành: 1-2 ngày\n• Ngoại thành: 2-4 ngày\n• Các tỉnh: 3-5 ngày',
-  'giao hàng': 'iStore miễn phí vận chuyển cho đơn hàng từ 2 triệu đồng. Thời gian giao hàng:\n• Nội thành: 1-2 ngày\n• Ngoại thành: 2-4 ngày\n• Các tỉnh: 3-5 ngày',
-  'ship': 'iStore miễn phí vận chuyển cho đơn hàng từ 2 triệu đồng. Thời gian giao hàng:\n• Nội thành: 1-2 ngày\n• Ngoại thành: 2-4 ngày\n• Các tỉnh: 3-5 ngày',
-  'iphone': 'iStore có đầy đủ các dòng iPhone mới nhất: iPhone 15 Pro Max, iPhone 15 Pro, iPhone 15 Plus và iPhone 15. Bạn muốn tìm hiểu về model nào?',
-  'ipad': 'iStore cung cấp các dòng iPad: iPad Pro M2, iPad Air, iPad (10th gen) và iPad mini. Bạn quan tâm đến dòng nào?',
-  'mac': 'Tại iStore có MacBook Air M2, MacBook Pro 14" và 16" M3. Bạn cần tư vấn thêm về cấu hình phù hợp không?',
-  'macbook': 'Tại iStore có MacBook Air M2, MacBook Pro 14" và 16" M3. Bạn cần tư vấn thêm về cấu hình phù hợp không?',
-  'trả góp': 'iStore hỗ trợ trả góp 0% lãi suất qua các ngân hàng và công ty tài chính. Thủ tục đơn giản, duyệt nhanh trong 15 phút. Liên hệ hotline để biết thêm chi tiết.',
-  'cảm ơn': 'Không có gì! Rất vui được hỗ trợ bạn. Nếu cần thêm thông tin gì, đừng ngại hỏi nhé! 😊',
-  'thanks': 'Không có gì! Rất vui được hỗ trợ bạn. Nếu cần thêm thông tin gì, đừng ngại hỏi nhé! 😊',
-  'bye': 'Tạm biệt! Chúc bạn một ngày tốt lành. Hẹn gặp lại! 👋',
-  'tạm biệt': 'Tạm biệt! Chúc bạn một ngày tốt lành. Hẹn gặp lại! 👋',
-};
-
-const defaultResponse = 'Cảm ơn bạn đã liên hệ! Tôi chưa hiểu rõ câu hỏi của bạn. Bạn có thể thử hỏi về:\n• Tình trạng đơn hàng\n• Chính sách đổi trả & bảo hành\n• Phương thức thanh toán\n• Vận chuyển & giao hàng\n• Sản phẩm iPhone, iPad, Mac\n\nHoặc liên hệ hotline 1900 xxxx để được hỗ trợ trực tiếp.';
+const quickReplies: string[] = [];
 
 const ChatBot = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -76,18 +37,9 @@ const ChatBot = () => {
   }, [messages]);
 
   const getBotResponse = (userMessage: string): string => {
-    const lowerMessage = userMessage.toLowerCase().trim();
-    
-    for (const [keyword, response] of Object.entries(botResponses)) {
-      if (lowerMessage.includes(keyword)) {
-        return response;
-      }
-    }
-    
-    return defaultResponse;
+    return userMessage;
   };
-
-  const handleSendMessage = (text?: string) => {
+  const handleSendMessage = async (text?: string) => {
     const messageText = text || inputValue.trim();
     if (!messageText) return;
 
@@ -98,21 +50,49 @@ const ChatBot = () => {
       timestamp: new Date(),
     };
 
+    // append user message and clear input
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setIsTyping(true);
 
-    // Simulate bot typing delay
-    setTimeout(() => {
-      const botResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        text: getBotResponse(messageText),
-        sender: 'bot',
-        timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, botResponse]);
-      setIsTyping(false);
-    }, 1000 + Math.random() * 500);
+    let replyText = '';
+
+    try {
+      const res = await fetch('http://127.0.0.1:8001/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: JSON.stringify({ message: messageText }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        replyText = data?.reply || data?.response;
+      } else {
+        console.error('Chat API Error:', res.status, res.statusText);
+        const errorBody = await res.text();
+        console.error('Server Response Details:', errorBody);
+      }
+    } catch (err) {
+      console.error('Chat API Error:', err);
+    }
+
+    if (!replyText) {
+      replyText = getBotResponse(messageText);
+    }
+
+    const botResponse: Message = {
+      id: (Date.now() + 1).toString(),
+      text: replyText,
+      sender: 'bot',
+      timestamp: new Date(),
+    };
+
+    setMessages(prev => [...prev, botResponse]);
+    setIsTyping(false);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
