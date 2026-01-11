@@ -5,6 +5,9 @@ import { Search, ShoppingBag, User, Menu, X, Smartphone, Tablet, Laptop } from '
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/contexts/CartContext';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
+
 
 const navLinks = [
   { path: '/', label: 'Trang chủ' },
@@ -15,6 +18,7 @@ const navLinks = [
 ];
 
 export function Header() {
+  const { user, logout } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -62,7 +66,7 @@ export function Header() {
                   className={cn(
                     'px-4 py-2 text-sm font-medium rounded-full transition-all duration-300',
                     location.pathname === link.path ||
-                    (link.path.includes('category') && location.search.includes(link.path.split('=')[1]))
+                      (link.path.includes('category') && location.search.includes(link.path.split('=')[1]))
                       ? 'bg-secondary text-foreground'
                       : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
                   )}
@@ -102,16 +106,48 @@ export function Header() {
                 </Button>
               </Link>
 
-              <Link to="/auth">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  <User className="w-5 h-5" />
-                </Button>
-              </Link>
+              {!user ? (
+                /* ===== CHƯA ĐĂNG NHẬP ===== */
+                <Link to="/auth">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    <User className="w-5 h-5" />
+                  </Button>
+                </Link>
+              ) : (
+                /* ===== ĐÃ ĐĂNG NHẬP ===== */
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="flex items-center gap-2 px-2"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center font-bold">
+                        {user.name?.charAt(0).toUpperCase()}
+                      </div>
+                      <span className="hidden md:block text-sm font-medium">
+                        {user.name}
+                      </span>
+                    </Button>
+                  </DropdownMenuTrigger>
 
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile">Tài khoản</Link>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem
+                      onClick={logout}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      Đăng xuất
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
               {/* Mobile Menu Button */}
               <Button
                 variant="ghost"

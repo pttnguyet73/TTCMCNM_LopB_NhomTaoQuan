@@ -28,6 +28,8 @@ import UserManagement from "@/components/admin/UserManagement";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
+
 
 
 const menuItems = [
@@ -43,10 +45,10 @@ const menuItems = [
 ];
 
 const Admin = () => {
-  
+
   const [activeTab, setActiveTab] = useState("overview");
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  
+  const { user, logout } = useAuth();
 
   const renderContent = () => {
     switch (activeTab) {
@@ -146,7 +148,7 @@ const Admin = () => {
         {/* Footer */}
         <div className="p-4 border-t border-border">
           <button
-            onClick={() => window.location.href = "/"}
+            onClick={logout} // <-- gọi logout từ context
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
           >
             <LogOut className="h-5 w-5 shrink-0" />
@@ -170,10 +172,14 @@ const Admin = () => {
             </p>
           </div>
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-              <span className="text-sm font-medium">AD</span>
+            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center font-medium">
+              {user?.name ? user.name.charAt(0).toUpperCase() : "A"}
             </div>
+            <span className="hidden md:block font-medium">
+              {user?.name || "Admin"}
+            </span>
           </div>
+
         </header>
 
         {/* Content */}
