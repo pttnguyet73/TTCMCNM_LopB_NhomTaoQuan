@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import api from '@/lib/api';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 
 export default function AuthPage() {
@@ -65,26 +66,21 @@ export default function AuthPage() {
       toast.error(err.response?.data?.message || 'OTP không đúng');
     }
   };
+const { login } = useAuth();
 
   const handleLogin = async () => {
-    try {
-      const res = await api.post('/login', {
-        email,
-        password,
-      });
-      localStorage.setItem('user_id', res.data.user.id);
-      localStorage.setItem('access_token', res.data.access_token);
-      toast.success('Đăng nhập thành công');
-      if (res.data.user.role === 'admin') {
-        navigate('/admin', { replace: true });
-      } else {
-        navigate('/', { replace: true });
-      }
+  try {
+    await login(email, password); // setUser sẽ được gọi bên trong context
+    toast.success('Đăng nhập thành công');
 
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Sai thông tin đăng nhập');
-    }
-  };
+    const role = JSON.parse(localStorage.getItem('user')!).role;
+    if (role === 'admin') navigate('/admin', { replace: true });
+    else navigate('/', { replace: true });
+
+  } catch (err: any) {
+    toast.error(err.response?.data?.message || 'Sai thông tin đăng nhập');
+  }
+};
 
 
   const handleSocialLogin = (provider: 'google' | 'facebook') => {
