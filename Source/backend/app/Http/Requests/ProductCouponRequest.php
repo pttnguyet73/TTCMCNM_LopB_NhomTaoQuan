@@ -22,7 +22,7 @@ class ProductCouponRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'product_id' => 'required|exists:product,id',
+            'product_id' => 'required|exists:products,id',
             'coupon_id' => 'required|exists:coupon,id',
         ];
     }
