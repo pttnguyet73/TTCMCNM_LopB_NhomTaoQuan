@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\CustomerExportController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\Admin\AdminOrderController;
+use App\Http\Controllers\Admin\AdminUserController;
 
 
 Route::middleware(['auth:sanctum', 'admin'])->prefix('product-colors')->group(function () {
@@ -147,3 +148,11 @@ Route::prefix('admin')->group(function () {
 Route::post('/coupon/validate', [OrderController::class, 'validateCoupon']);
 
 Route::post('/chat', [ChatController::class, '__invoke']);
+
+Route::middleware(['auth:sanctum'])->prefix('admin')->group(function () {
+    Route::get('/users', [AdminUserController::class, 'index']);
+    Route::post('/users', [AdminUserController::class, 'store']); 
+    Route::put('/users/{id}/status', [AdminUserController::class, 'updateStatus']);
+    Route::put('/users/{id}/role', [AdminUserController::class, 'updateRole']);
+    Route::delete('/users/{id}', [AdminUserController::class, 'destroy']); 
+});

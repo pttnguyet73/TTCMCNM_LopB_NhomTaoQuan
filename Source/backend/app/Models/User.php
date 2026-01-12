@@ -29,6 +29,7 @@ class User extends Authenticatable implements MustVerifyEmail
     use HasProfilePhoto;
     use Notifiable;
     use TwoFactorAuthenticatable;
+    use \Illuminate\Database\Eloquent\SoftDeletes;
 
     protected $fillable = [
         'name',
@@ -62,6 +63,9 @@ class User extends Authenticatable implements MustVerifyEmail
 
     ];
 
+    protected $dates = [
+        'deleted_at',
+    ];
     public function orders()
     {
         return $this->hasMany(Order::class);
