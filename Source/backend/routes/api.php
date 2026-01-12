@@ -71,14 +71,14 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('products')->group(function
 Route::post('/product-coupons', [App\Http\Controllers\ProductCouponController::class, 'attachCoupon']);
 Route::delete('/product-coupons', [App\Http\Controllers\ProductCouponController::class, 'detachCoupon']);
 
-route::middleware(['auth:sanctum', 'admin'])->prefix('coupons')->group(function () {
+route::middleware(['auth:sanctum'])->prefix('coupons')->group(function () {
     Route::get('/', [CouponController::class, 'index']); 
     Route::post('/', [CouponController::class, 'store']);       
     Route::put('/{id}', [CouponController::class, 'update']);  
     Route::delete('/{id}', [CouponController::class, 'destroy']); 
+    Route::get('/{code}', [CouponController::class, 'getCode']);
 }); 
-Route::get('/',[CouponController::class, 'index']);
-Route::get('/coupons/{id}', [CouponController::class, 'show']);
+
 
 Route::post('/reviews', [App\Http\Controllers\ReviewController::class, 'store']);
 Route::get('/reviews/{id}', [App\Http\Controllers\ReviewController::class, 'show']);

@@ -8,6 +8,7 @@ import { useCart } from '@/contexts/CartContext';
 import { formatPrice } from '@/data/products';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import api from '@/lib/api';
 
 export default function CartPage() {
   const { items, updateQuantity, removeFromCart, totalPrice, clearCart } = useCart();
@@ -17,12 +18,30 @@ export default function CartPage() {
   const shippingFee = totalPrice >= 2000000 ? 0 : 50000;
   const finalTotal = totalPrice - discount + shippingFee;
 
-  const handleApplyPromo = () => {
-    if (promoCode.toLowerCase() === 'istore10') {
-      setDiscount(totalPrice * 0.1);
-      toast.success('Đã áp dụng mã giảm giá 10%');
-    } else {
-      toast.error('Mã giảm giá không hợp lệ');
+  const handleApplyPromo = async () => {
+    if (!promoCode) return toast.error('Vui lòng nhập mã giảm giá');
+
+    try {
+      const res = await api.get(`/coupons/${promoCode}`);
+      const coupon = res.data;
+
+      const now = new Date();
+      if (coupon.used >= coupon.max_uses) throw new Error('Mã giảm giá đã hết lượt sử dụng');
+      if (totalPrice < coupon.min_total) throw new Error(`Đơn hàng tối thiểu ${formatPrice(coupon.min_total)} để sử dụng mã`);
+      if (new Date(coupon.valid_from) > now || new Date(coupon.valid_to) < now) throw new Error('Mã giảm giá chưa tới hạn hoặc đã hết hạn');
+
+      let newDiscount = 0;
+      if (coupon.type === 'percent') {
+        newDiscount = totalPrice * (coupon.value / 100);
+      } else if (coupon.type === 'fixed') {
+        newDiscount = coupon.value;
+      }
+
+      setDiscount(newDiscount);
+      toast.success(`Đã áp dụng mã giảm giá ${coupon.code} - Giảm ${formatPrice(newDiscount)}`);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || 'Mã giảm giá không hợp lệ');
+      setDiscount(0);
     }
   };
 
@@ -182,10 +201,8 @@ export default function CartPage() {
                 </h2>
 
                 {/* Promo Code */}
-                <div className="mb-6">
-                  <label className="text-sm font-medium text-foreground mb-2 block">
-                    Mã giảm giá
-                  </label>
+                 <div className="mb-6">
+                  <label className="text-sm font-medium text-foreground mb-2 block">Mã giảm giá</label>
                   <div className="flex gap-2">
                     <div className="relative flex-1">
                       <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -201,9 +218,6 @@ export default function CartPage() {
                       Áp dụng
                     </Button>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Thử mã: ISTORE10
-                  </p>
                 </div>
 
                 {/* Summary */}
@@ -220,18 +234,15 @@ export default function CartPage() {
                   )}
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Phí vận chuyển</span>
-                    <span className="font-medium">
-                      {shippingFee === 0 ? 'Miễn phí' : formatPrice(shippingFee)}
-                    </span>
+                    <span className="font-medium">{shippingFee === 0 ? 'Miễn phí' : formatPrice(shippingFee)}</span>
                   </div>
                   <div className="h-px bg-border" />
                   <div className="flex items-center justify-between">
                     <span className="text-lg font-bold text-foreground">Tổng cộng</span>
-                    <span className="text-2xl font-bold text-foreground">
-                      {formatPrice(finalTotal)}
-                    </span>
+                    <span className="text-2xl font-bold text-foreground">{formatPrice(finalTotal)}</span>
                   </div>
                 </div>
+
 
                 {/* Checkout Button */}
                 <Link to="/checkout">
