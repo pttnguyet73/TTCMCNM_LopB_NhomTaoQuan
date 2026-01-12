@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Package, Clock, Truck, CheckCircle, CreditCard, Calendar, Hash, ChevronRight, Eye } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,100 +8,35 @@ import { Separator } from "@/components/ui/separator";
 
 type OrderStatus = "all" | "pending" | "shipping" | "delivered";
 
+import { orderAPI } from "@/services/order";
+
 interface OrderItem {
-  id: string;
+  product_id?: number | string;
+  id?: string;
   name: string;
-  image: string;
-  storage: string;
-  color: string;
+  image?: string;
+  storage?: string;
+  color?: string;
   quantity: number;
   price: number;
 }
 
 interface Order {
-  id: string;
-  orderNumber: string;
+  id: string; // formatted id like #ORD-001
+  raw_id?: number;
+  orderNumber?: string;
   date: string;
-  paymentMethod: string;
+  paymentMethod?: string;
   items: OrderItem[];
   total: number;
   status: "pending" | "shipping" | "delivered";
 }
 
-const MOCK_ORDERS: Order[] = [
-  {
-    id: "1",
-    orderNumber: "ORD-2024-001234",
-    date: "2024-01-15",
-    paymentMethod: "Thanh toán khi nhận hàng (COD)",
-    items: [
-      {
-        id: "1",
-        name: "iPhone 15 Pro Max",
-        image: "https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=100&h=100&fit=crop",
-        storage: "256GB",
-        color: "Titan Tự Nhiên",
-        quantity: 1,
-        price: 34990000,
-      },
-    ],
-    total: 34990000,
-    status: "delivered",
-  },
-  {
-    id: "2",
-    orderNumber: "ORD-2024-001235",
-    date: "2024-01-18",
-    paymentMethod: "Chuyển khoản ngân hàng",
-    items: [
-      {
-        id: "2",
-        name: "Samsung Galaxy S24 Ultra",
-        image: "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=100&h=100&fit=crop",
-        storage: "512GB",
-        color: "Titan Gray",
-        quantity: 1,
-        price: 31990000,
-      },
-      {
-        id: "3",
-        name: "Ốp lưng Galaxy S24 Ultra",
-        image: "https://images.unsplash.com/photo-1601593346740-925612772716?w=100&h=100&fit=crop",
-        storage: "",
-        color: "Đen",
-        quantity: 2,
-        price: 450000,
-      },
-    ],
-    total: 32890000,
-    status: "shipping",
-  },
-  {
-    id: "3",
-    orderNumber: "ORD-2024-001236",
-    date: "2024-01-20",
-    paymentMethod: "Ví điện tử MoMo",
-    items: [
-      {
-        id: "4",
-        name: "OPPO Find X7 Ultra",
-        image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=100&h=100&fit=crop",
-        storage: "256GB",
-        color: "Ocean Blue",
-        quantity: 1,
-        price: 22990000,
-      },
-    ],
-    total: 22990000,
-    status: "pending",
-  },
-];
-
 const STATUS_TABS = [
   { key: "all" as OrderStatus, label: "Tất cả", icon: Package },
   { key: "pending" as OrderStatus, label: "Chờ xác nhận", icon: Clock },
   { key: "shipping" as OrderStatus, label: "Đang giao hàng", icon: Truck },
-  { key: "delivered" as OrderStatus, label: "Đã giao", icon: CheckCircle },
+  { key: "delivered" as OrderStatus, label: "Hoàn thành", icon: CheckCircle },
 ];
 
 const getStatusConfig = (status: Order["status"]) => {
@@ -120,7 +55,7 @@ const getStatusConfig = (status: Order["status"]) => {
       };
     case "delivered":
       return {
-        label: "Đã giao",
+        label: "Hoàn thành",
         className: "bg-green-100 text-green-800 border-green-200",
         icon: CheckCircle,
       };
@@ -135,6 +70,9 @@ const formatPrice = (price: number) => {
 };
 
 const formatDate = (dateStr: string) => {
+  if (!dateStr) return '';
+  // backend may already return formatted `dd/mm/YYYY H:i`, just return raw in that case
+  if (dateStr.includes('/')) return dateStr;
   const date = new Date(dateStr);
   return new Intl.DateTimeFormat("vi-VN", {
     day: "2-digit",
@@ -145,8 +83,74 @@ const formatDate = (dateStr: string) => {
 
 const OrderHistory = () => {
   const [activeTab, setActiveTab] = useState<OrderStatus>("all");
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const filteredOrders = MOCK_ORDERS.filter((order) => {
+  const parsePrice = (val: any) => {
+    if (typeof val === 'number') return val;
+    if (!val) return 0;
+    const s = String(val).replace(/[^0-9.-]+/g, '');
+    const n = parseFloat(s);
+    return Number.isFinite(n) ? n : 0;
+  };
+
+  const mapStatusKey = (statusStr: string | undefined) => {
+    if (!statusStr) return 'pending';
+    const s = statusStr.toLowerCase();
+    if (s.includes('chờ') || s.includes('cho') || s.includes('pending')) return 'pending';
+    if (s.includes('hoàn') && s.includes('thành') || s.includes('hoan') && s.includes('thanh') || s.includes('hoàn thanh') || s.includes('hoan thành') || s.includes('hoàn thành')|| s.includes('deliv')) return 'delivered';
+    if (s.includes('đang') || s.includes('giao') || s.includes('dang') || s.includes('shipping')) return 'shipping';
+    return 'pending';
+  };
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      try {
+        const res = await orderAPI.getUserOrders();
+        const payload = res && res.data ? res.data : res; // support shapes
+        const list = Array.isArray(payload) ? payload : (payload?.data ?? payload?.data ?? payload);
+        const ordersList = Array.isArray(list) ? list : (payload?.data ?? []);
+
+        const full = await Promise.all((ordersList as any[]).map(async (o: any) => {
+          const detailRes = await orderAPI.getOrderDetailPublic(o.raw_id ?? o.rawId ?? o.rawId ?? o.id?.replace(/[^0-9]/g, ''));
+          const detail = detailRes && detailRes.data ? detailRes.data : detailRes;
+          const itemsRaw = detail?.items ?? [];
+          const items: OrderItem[] = (itemsRaw as any[]).map((it: any, idx: number) => ({
+            id: String(it.product_id ?? idx),
+            product_id: it.product_id,
+            name: it.name,
+            image: it.image ?? it.product_image,
+            quantity: Number(it.quantity) || 0,
+            price: parsePrice(it.price_raw ?? it.price ?? it.price_raw),
+          }));
+
+          const total = parsePrice(o.total_raw ?? o.total_amount ?? o.total_raw ?? o.total_amount);
+
+          return {
+            id: o.id,
+            raw_id: o.raw_id ?? o.rawId ?? o.id,
+            orderNumber: o.id,
+            date: o.created_at ?? o.createdAt ?? o.createdAtRaw ?? o.created_at,
+            paymentMethod: o.payment_method ?? o.paymentMethod,
+            items,
+            total,
+            status: mapStatusKey(o.status_key ?? o.status),
+          } as Order;
+        }));
+
+        setOrders(full);
+      } catch (err) {
+        console.error('Error loading orders', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, []);
+
+  const filteredOrders = orders.filter((order) => {
     if (activeTab === "all") return true;
     return order.status === activeTab;
   });
@@ -158,9 +162,9 @@ const OrderHistory = () => {
         {STATUS_TABS.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.key;
-          const count = tab.key === "all" 
-            ? MOCK_ORDERS.length 
-            : MOCK_ORDERS.filter(o => o.status === tab.key).length;
+          const count = tab.key === "all"
+            ? orders.length
+            : orders.filter(o => o.status === tab.key).length;
 
           return (
             <motion.button
