@@ -385,7 +385,7 @@ const Checkout = () => {
                     <div key={index} className="flex gap-3">
                       <div className="w-16 h-16 bg-muted rounded-lg overflow-hidden flex-shrink-0">
                         <img 
-                          src={item.product.images[0]} 
+                          src={item.image} 
                           alt={item.product.name}
                           className="w-full h-full object-cover"
                         />
@@ -393,7 +393,7 @@ const Checkout = () => {
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm truncate">{item.product.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          {item.selectedColor} / {item.selectedStorage}
+                          {item.selectedColor} 
                         </p>
                         <div className="flex justify-between items-center mt-1">
                           <span className="text-xs text-muted-foreground">x{item.quantity}</span>
