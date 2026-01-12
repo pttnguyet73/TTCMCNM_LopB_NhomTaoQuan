@@ -51,7 +51,7 @@ class Product extends Model
 
     public function coupons()
     {
-        return $this->belongsToMany(Coupon::class, 'productCoupon', 'product_id', 'coupon_id');
+        return $this->belongsToMany(Coupon::class, 'productcoupon', 'product_id', 'coupon_id');
     }
 
     public function reviews()
@@ -62,5 +62,9 @@ class Product extends Model
     public function cartItems()
     {
         return $this->hasMany(CartItem::class, 'product_id');
+    }
+    public function mainImage()
+    {
+        return $this->hasOne(ProductImage::class)->orderBy('id');
     }
 }
