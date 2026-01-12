@@ -83,7 +83,7 @@ export default function CartPage() {
             >
               {items.map((item, index) => (
                 <motion.div
-                  key={`${item.product.id}-${item.selectedColor}-${item.selectedStorage}`}
+                  key={`${item.product.id}-${item.selectedColor}`}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
@@ -93,7 +93,7 @@ export default function CartPage() {
                   <Link to={`/product/${item.product.id}`} className="shrink-0">
                     <div className="w-24 h-24 md:w-32 md:h-32 rounded-xl overflow-hidden bg-secondary">
                       <img
-                        src={item.product.image}
+                        src={item.image}
                         alt={item.product.name}
                         className="w-full h-full object-cover"
                       />
@@ -110,7 +110,6 @@ export default function CartPage() {
                     <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
                       <span>{item.selectedColor}</span>
                       <span>•</span>
-                      <span>{item.selectedStorage}</span>
                     </div>
                     <p className="text-lg font-bold text-foreground mt-2">
                       {formatPrice(item.product.price)}
@@ -126,7 +125,6 @@ export default function CartPage() {
                           onClick={() => updateQuantity(
                             item.product.id,
                             item.selectedColor,
-                            item.selectedStorage,
                             item.quantity - 1
                           )}
                         >
@@ -140,7 +138,6 @@ export default function CartPage() {
                           onClick={() => updateQuantity(
                             item.product.id,
                             item.selectedColor,
-                            item.selectedStorage,
                             item.quantity + 1
                           )}
                         >
@@ -155,7 +152,6 @@ export default function CartPage() {
                         onClick={() => removeFromCart(
                           item.product.id,
                           item.selectedColor,
-                          item.selectedStorage
                         )}
                       >
                         <Trash2 className="w-5 h-5" />

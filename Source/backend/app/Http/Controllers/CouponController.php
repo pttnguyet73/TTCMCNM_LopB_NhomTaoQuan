@@ -2,55 +2,64 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
 use App\Models\Coupon;
-use App\Http\Requests\CouponRequest;
-
+use Illuminate\Http\Request;
 
 class CouponController extends Controller
 {
-    //
     public function index()
     {
-        $coupons = Coupon::all();
-        return response()->json($coupons);
+        return Coupon::where('is_delete', false)->get();
     }
 
-    public function store(CouponRequest $request)
+    public function store(Request $request)
     {
-        $validated = $request->validated();
+        $data = $request->validate([
+            'code' => 'required|unique:coupon,code',
+            'type' => 'required|in:percent,fixed',
+            'value' => 'required|integer|min:1',
+            'min_order_amount' => 'nullable|integer|min:0',
+            'usage_limit' => 'nullable|integer|min:0',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+        ]);
 
-        $coupon = Coupon::create($validated);
+        $coupon = Coupon::create([
+            ...$data,
+            'used_count' => 0,
+            'is_active' => true,
+            'is_delete' => false,
+        ]);
+
         return response()->json($coupon, 201);
     }
 
-    public function show($id)
+    public function update(Request $request, $id)
     {
         $coupon = Coupon::findOrFail($id);
-        return response()->json($coupon);
-    }
 
-    public function update(CouponRequest $request, $id)
-    {
-        $coupon = Coupon::findOrFail($id);
-        $validated = $request->validated();
+        $data = $request->validate([
+            'code' => 'required|unique:coupon,code,' . $coupon->id,
+            'type' => 'required|in:percent,fixed',
+            'value' => 'required|integer|min:1',
+            'min_order_amount' => 'nullable|integer|min:0',
+            'usage_limit' => 'nullable|integer|min:0',
+            'is_active' => 'boolean',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+        ]);
 
-        $coupon->update($validated);
+        $coupon->update($data);
+
         return response()->json($coupon);
     }
 
     public function destroy($id)
     {
         $coupon = Coupon::findOrFail($id);
-        $coupon->delete();
-        return response()->json(['message' => 'Xóa mã giảm giá thành công']);
-    }
-
-    //viết funtion xóa mềm có tên softDelete update lại trường is_delete thành true
-    public function softDelete($id)
-    {
-        $coupon = Coupon::findOrFail($id);
         $coupon->update(['is_delete' => true]);
-        return response()->json(null, 204);
+
+        return response()->json(['message' => 'Deleted']);
     }
 }
