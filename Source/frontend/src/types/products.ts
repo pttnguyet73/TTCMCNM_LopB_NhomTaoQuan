@@ -26,21 +26,41 @@ export interface ProductColor {
   updated_at?: string;
 }
 
+// src/types/products.ts
 export interface Product {
-  id: number;
+  id: string | number;
   name: string;
-  slug?: string;
-  description?: string;
+  description: string;
   price: number;
-  sale_price?: number | null;
-  stock?: number;
-  category_id: number;
-
-  // Quan hệ
-  category?: Category;
-  images?: ProductImage[];
-  colors?: ProductColor[];
-
+  original_price?: number;
+  category_id?: string | number;
+  category?: {
+    id: string | number;
+    name: string;
+  };
+  status: number;
+  is_new: boolean;
+  is_featured: boolean;
+  rating: number;
+  review_count: number;
+  images?: Array<{
+    id: string | number;
+    image_url: string;
+    is_main: boolean;
+  }>;
+  colors?: Array<{
+    id: string | number;
+    name: string;
+    hex: string;
+  }>;
+  specs?: Array<{
+    id?: string | number;
+    key?: string;
+    value?: string;
+    label?: string;
+  }>;
+  // Thêm storage nếu API có
+  storage?: string[];
   created_at?: string;
   updated_at?: string;
 }

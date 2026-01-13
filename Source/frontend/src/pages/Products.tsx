@@ -1,12 +1,25 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, SlidersHorizontal, Grid3X3, LayoutList, X, ChevronDown, Smartphone, Tablet, Laptop } from 'lucide-react';
+import {
+  Search,
+  SlidersHorizontal,
+  Grid3X3,
+  LayoutList,
+  X,
+  ChevronDown,
+  Smartphone,
+  Tablet,
+  Laptop,
+  Loader2,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { ProductCard } from '@/components/product/ProductCard';
-import { products, categories, formatPrice } from '@/data/products';
+import { productService } from '@/services/product';
+import { Product as ApiProduct } from '@/types/products';
+import { Product as LocalProduct } from '@/data/products';
 import { cn } from '@/lib/utils';
 
 const sortOptions = [
@@ -31,6 +44,84 @@ const categoryIcons = {
   mac: Laptop,
 };
 
+const categories = [
+  { id: 'all', name: 'Tất cả' },
+  { id: '1', name: 'iPhone' },
+  { id: '2', name: 'iPad' },
+  { id: '3', name: 'Mac' },
+];
+
+// Hàm chuyển đổi dữ liệu từ API sang format cho CartContext
+const mapApiToLocalProduct = (apiProduct: ApiProduct): LocalProduct => {
+  // Map category từ API sang định dạng 'iphone' | 'ipad' | 'mac'
+  let category: 'iphone' | 'ipad' | 'mac' = 'iphone'; // Mặc định
+
+  if (apiProduct.category) {
+    const catName = apiProduct.category.name.toLowerCase();
+    if (catName.includes('iphone') || catName === 'iphone') {
+      category = 'iphone';
+    } else if (catName.includes('ipad') || catName === 'ipad') {
+      category = 'ipad';
+    } else if (catName.includes('mac') || catName === 'mac') {
+      category = 'mac';
+    }
+  } else if (apiProduct.category_id) {
+    // Map theo ID nếu không có category object
+    const categoryId = apiProduct.category_id.toString();
+    if (categoryId === '1' || categoryId === 'iphone') {
+      category = 'iphone';
+    } else if (categoryId === '2' || categoryId === 'ipad') {
+      category = 'ipad';
+    } else if (categoryId === '3' || categoryId === 'mac') {
+      category = 'mac';
+    }
+  }
+
+  // Xử lý ảnh
+  const images = apiProduct.images?.map((img) => img.image_url) || [];
+  const mainImage = images.length > 0 ? images[0] : '/images/placeholder.jpg';
+
+  // Xử lý màu sắc
+  const colors =
+    apiProduct.colors?.map((color) => ({
+      name: color.name || 'Default',
+      hex: color.hex || '#000000',
+    })) || [];
+
+  // Xử lý specs (nếu API không có, tạo mặc định từ thông tin sản phẩm)
+  const specs: { label: string; value: string }[] = [];
+
+  // Thêm specs mặc định nếu cần
+  if (apiProduct.specs && Array.isArray(apiProduct.specs)) {
+    // Nếu specs từ API có sẵn dạng { label, value }
+    specs.push(
+      ...apiProduct.specs.map((spec: any) => ({
+        label: spec.label || spec.key || '',
+        value: spec.value || '',
+      })),
+    );
+  }
+
+  return {
+    id: apiProduct.id.toString(),
+    name: apiProduct.name,
+    category: category,
+    price: apiProduct.price,
+    originalPrice: apiProduct.original_price || undefined,
+    image: mainImage,
+    images: images,
+    description: apiProduct.description || '',
+    specs: specs,
+    colors: colors,
+    storage: [], // Cần lấy từ API nếu có, tạm thời để rỗng
+    rating: apiProduct.rating || 0,
+    reviews: apiProduct.review_count || 0,
+    inStock: apiProduct.status === 1, // status 1 = còn hàng
+    isNew: apiProduct.is_new || false,
+    isFeatured: apiProduct.is_featured || false,
+  };
+};
+
 export default function ProductsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
@@ -38,52 +129,53 @@ export default function ProductsPage() {
   const [isGridView, setIsGridView] = useState(true);
   const [sortBy, setSortBy] = useState('featured');
   const [selectedPriceRange, setSelectedPriceRange] = useState<number | null>(null);
+  const [products, setProducts] = useState<ApiProduct[]>([]); // Giữ nguyên API product
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const selectedCategory = searchParams.get('category') || 'all';
 
-  const filteredProducts = useMemo(() => {
-    let result = [...products];
+  // Hàm fetch sản phẩm từ API
+  const fetchProducts = async () => {
+    setLoading(true);
+    setError(null);
 
-    // Category filter
-    if (selectedCategory !== 'all') {
-      result = result.filter(p => p.category === selectedCategory);
+    try {
+      const params: any = {
+        sort_by: sortBy,
+      };
+
+      if (searchQuery) {
+        params.search = searchQuery;
+      }
+
+      if (selectedCategory !== 'all') {
+        params.category_id = selectedCategory;
+      }
+
+      if (selectedPriceRange !== null) {
+        const range = priceRanges[selectedPriceRange];
+        params.min_price = range.min;
+        params.max_price = range.max === Infinity ? undefined : range.max;
+      }
+
+      const data = await productService.getFilteredProducts(params);
+      setProducts(data);
+    } catch (err) {
+      console.error('Error fetching products:', err);
+      setError('Không thể tải sản phẩm. Vui lòng thử lại sau.');
+    } finally {
+      setLoading(false);
     }
+  };
 
-    // Search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(p =>
-        p.name.toLowerCase().includes(query) ||
-        p.description.toLowerCase().includes(query)
-      );
-    }
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      fetchProducts();
+    }, 300);
 
-    // Price filter
-    if (selectedPriceRange !== null) {
-      const range = priceRanges[selectedPriceRange];
-      result = result.filter(p => p.price >= range.min && p.price < range.max);
-    }
-
-    // Sort
-    switch (sortBy) {
-      case 'price-asc':
-        result.sort((a, b) => a.price - b.price);
-        break;
-      case 'price-desc':
-        result.sort((a, b) => b.price - a.price);
-        break;
-      case 'newest':
-        result.sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0));
-        break;
-      case 'rating':
-        result.sort((a, b) => b.rating - a.rating);
-        break;
-      default:
-        result.sort((a, b) => (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0));
-    }
-
-    return result;
-  }, [selectedCategory, searchQuery, selectedPriceRange, sortBy]);
+    return () => clearTimeout(debounceTimer);
+  }, [searchQuery, selectedCategory, selectedPriceRange, sortBy]);
 
   const handleCategoryChange = (category: string) => {
     if (category === 'all') {
@@ -104,36 +196,71 @@ export default function ProductsPage() {
 
   const hasActiveFilters = selectedCategory !== 'all' || searchQuery || selectedPriceRange !== null;
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="pt-24 pb-16">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-center py-40">
+              <Loader2 className="w-8 h-8 animate-spin text-accent" />
+              <span className="ml-2 text-muted-foreground">Đang tải sản phẩm...</span>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="pt-24 pb-16">
+          <div className="container mx-auto px-4">
+            <div className="py-24 text-center">
+              <div className="w-20 h-20 bg-secondary rounded-full flex items-center justify-center mx-auto mb-6">
+                <X className="w-8 h-8 text-destructive" />
+              </div>
+              <h3 className="text-xl font-semibold text-foreground mb-2">Có lỗi xảy ra</h3>
+              <p className="text-muted-foreground mb-6">{error}</p>
+              <Button variant="apple" onClick={fetchProducts}>
+                Thử lại
+              </Button>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
 
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-4">
-          {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="mb-8"
           >
             <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-              {selectedCategory === 'all' ? 'Tất cả sản phẩm' : 
-               selectedCategory === 'iphone' ? 'iPhone' :
-               selectedCategory === 'ipad' ? 'iPad' : 'Mac'}
+              {selectedCategory === 'all'
+                ? 'Tất cả sản phẩm'
+                : categories.find((c) => c.id === selectedCategory)?.name || 'Sản phẩm'}
             </h1>
-            <p className="text-muted-foreground">
-              {filteredProducts.length} sản phẩm
-            </p>
+            <p className="text-muted-foreground">{products.length} sản phẩm</p>
           </motion.div>
 
-          {/* Filters Bar */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
             className="flex flex-col lg:flex-row gap-4 mb-8"
           >
-            {/* Search */}
             <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <input
@@ -145,10 +272,9 @@ export default function ProductsPage() {
               />
             </div>
 
-            {/* Category Tabs */}
             <div className="flex items-center gap-2 overflow-x-auto pb-2 lg:pb-0">
               {categories.map((category) => {
-                const Icon = categoryIcons[category.id as keyof typeof categoryIcons];
+                const Icon = categoryIcons[category.id as keyof typeof categoryIcons] || Grid3X3;
                 return (
                   <button
                     key={category.id}
@@ -157,7 +283,7 @@ export default function ProductsPage() {
                       'flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-300',
                       selectedCategory === category.id
                         ? 'bg-accent text-accent-foreground'
-                        : 'bg-secondary text-muted-foreground hover:bg-secondary/80'
+                        : 'bg-secondary text-muted-foreground hover:bg-secondary/80',
                     )}
                   >
                     <Icon className="w-4 h-4" />
@@ -167,7 +293,6 @@ export default function ProductsPage() {
               })}
             </div>
 
-            {/* Sort & View Options */}
             <div className="flex items-center gap-2">
               <div className="relative">
                 <select
@@ -188,10 +313,7 @@ export default function ProductsPage() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setShowFilters(!showFilters)}
-                className={cn(
-                  'rounded-xl',
-                  showFilters && 'bg-accent text-accent-foreground'
-                )}
+                className={cn('rounded-xl', showFilters && 'bg-accent text-accent-foreground')}
               >
                 <SlidersHorizontal className="w-5 h-5" />
               </Button>
@@ -201,10 +323,7 @@ export default function ProductsPage() {
                   variant="ghost"
                   size="icon"
                   onClick={() => setIsGridView(true)}
-                  className={cn(
-                    'rounded-lg h-9 w-9',
-                    isGridView && 'bg-background shadow-sm'
-                  )}
+                  className={cn('rounded-lg h-9 w-9', isGridView && 'bg-background shadow-sm')}
                 >
                   <Grid3X3 className="w-4 h-4" />
                 </Button>
@@ -212,10 +331,7 @@ export default function ProductsPage() {
                   variant="ghost"
                   size="icon"
                   onClick={() => setIsGridView(false)}
-                  className={cn(
-                    'rounded-lg h-9 w-9',
-                    !isGridView && 'bg-background shadow-sm'
-                  )}
+                  className={cn('rounded-lg h-9 w-9', !isGridView && 'bg-background shadow-sm')}
                 >
                   <LayoutList className="w-4 h-4" />
                 </Button>
@@ -223,7 +339,6 @@ export default function ProductsPage() {
             </div>
           </motion.div>
 
-          {/* Active Filters */}
           <AnimatePresence>
             {hasActiveFilters && (
               <motion.div
@@ -235,7 +350,7 @@ export default function ProductsPage() {
                 <span className="text-sm text-muted-foreground">Đang lọc:</span>
                 {selectedCategory !== 'all' && (
                   <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-accent/10 text-accent rounded-full text-sm">
-                    {categories.find(c => c.id === selectedCategory)?.name}
+                    {categories.find((c) => c.id === selectedCategory)?.name}
                     <button onClick={() => handleCategoryChange('all')}>
                       <X className="w-3 h-3" />
                     </button>
@@ -257,17 +372,13 @@ export default function ProductsPage() {
                     </button>
                   </span>
                 )}
-                <button
-                  onClick={clearFilters}
-                  className="text-sm text-destructive hover:underline"
-                >
+                <button onClick={clearFilters} className="text-sm text-destructive hover:underline">
                   Xóa tất cả
                 </button>
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* Filter Sidebar */}
           <AnimatePresence>
             {showFilters && (
               <motion.div
@@ -281,12 +392,14 @@ export default function ProductsPage() {
                   {priceRanges.map((range, index) => (
                     <button
                       key={index}
-                      onClick={() => setSelectedPriceRange(selectedPriceRange === index ? null : index)}
+                      onClick={() =>
+                        setSelectedPriceRange(selectedPriceRange === index ? null : index)
+                      }
                       className={cn(
                         'px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300',
                         selectedPriceRange === index
                           ? 'bg-accent text-accent-foreground'
-                          : 'bg-background hover:bg-background/80'
+                          : 'bg-background hover:bg-background/80',
                       )}
                     >
                       {range.label}
@@ -297,17 +410,20 @@ export default function ProductsPage() {
             )}
           </AnimatePresence>
 
-          {/* Products Grid */}
-          {filteredProducts.length > 0 ? (
-            <div className={cn(
-              'grid gap-6',
-              isGridView
-                ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
-                : 'grid-cols-1'
-            )}>
-              {filteredProducts.map((product, index) => (
-                <ProductCard key={product.id} product={product} index={index} />
-              ))}
+          {products.length > 0 ? (
+            <div
+              className={cn(
+                'grid gap-6',
+                isGridView
+                  ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+                  : 'grid-cols-1',
+              )}
+            >
+              {products.map((apiProduct, index) => {
+                // Chuyển đổi từ API product sang local product cho CartContext
+                const localProduct = mapApiToLocalProduct(apiProduct);
+                return <ProductCard key={apiProduct.id} product={localProduct} index={index} />;
+              })}
             </div>
           ) : (
             <motion.div
