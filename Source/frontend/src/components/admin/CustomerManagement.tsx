@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search,
   Eye,
@@ -17,34 +17,29 @@ import {
   Download,
   Clock,
   AlertCircle,
-  Loader2
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+  Loader2,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
-import { customerAPI, type Customer, type Order } from "@/services/customer";
-import { formatPrice } from "@/data/products";
+} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
+import { customerAPI, type Customer, type Order } from '@/services/customer';
+import { formatPrice } from '@/data/products';
 import {
   Table,
   TableBody,
@@ -52,23 +47,35 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from '@/components/ui/table';
 
-const statusConfig = {
-  active: { 
-    label: "Hoạt động", 
-    color: "bg-emerald-100 text-emerald-700 border border-emerald-200",
-    icon: UserCheck
+const statusConfig: Record<
+  'active' | 'inactive' | 'vip' | 'banned',
+  {
+    label: string;
+    color: string;
+    icon?: any;
+  }
+> = {
+  active: {
+    label: 'Hoạt động',
+    color: 'bg-emerald-100 text-emerald-700 border border-emerald-200',
+    icon: UserCheck,
   },
-  inactive: { 
-    label: "Không hoạt động", 
-    color: "bg-gray-100 text-gray-700 border border-gray-200",
-    icon: UserX
+  inactive: {
+    label: 'Không hoạt động',
+    color: 'bg-gray-100 text-gray-700 border border-gray-200',
+    icon: UserX,
   },
-  vip: { 
-    label: "VIP", 
-    color: "bg-amber-100 text-amber-700 border border-amber-200",
-    icon: Star
+  vip: {
+    label: 'VIP',
+    color: 'bg-amber-100 text-amber-700 border border-amber-200',
+    icon: Star,
+  },
+  banned: {
+    label: 'Bị khóa',
+    color: 'bg-red-100 text-red-700 border border-red-200',
+    icon: AlertCircle,
   },
 };
 
@@ -84,13 +91,13 @@ const getAvatarFromName = (name: string): string => {
 
 // Hàm format ngày
 const formatDate = (dateString: string | null | undefined): string => {
-  if (!dateString) return "Chưa có";
+  if (!dateString) return 'Chưa có';
   try {
     const date = new Date(dateString);
     return date.toLocaleDateString('vi-VN', {
       year: 'numeric',
       month: '2-digit',
-      day: '2-digit'
+      day: '2-digit',
     });
   } catch (error) {
     return dateString;
@@ -106,8 +113,8 @@ const CustomerManagement = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [searchTerm, setSearchTerm] = useState<string>("");
-  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [selectedCustomerOrders, setSelectedCustomerOrders] = useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = useState<boolean>(false);
@@ -122,27 +129,27 @@ const CustomerManagement = () => {
     try {
       setLoading(true);
       const response = await customerAPI.getCustomers();
-      
+
       const customersData = response.data || response || [];
-      
+
       const formattedCustomers = customersData.map((customer: any) => ({
         ...customer,
         avatar: getAvatarFromName(customer.name),
         orders_count: customer.order_count ?? 0,
         total_spent: customer.total_spent || 0,
         last_order_date: customer.last_order_date || null,
-        phone: customer.phone || "Chưa cập nhật",
-        address: customer.address || "Chưa cập nhật",
+        phone: customer.phone || 'Chưa cập nhật',
+        address: customer.address || 'Chưa cập nhật',
       }));
-      
+
       setCustomers(formattedCustomers);
       setFilteredCustomers(formattedCustomers);
     } catch (error: any) {
       console.error('Error fetching customers:', error);
       toast({
-        variant: "destructive",
-        title: "Lỗi",
-        description: error.response?.data?.message || "Không thể tải danh sách khách hàng",
+        variant: 'destructive',
+        title: 'Lỗi',
+        description: error.response?.data?.message || 'Không thể tải danh sách khách hàng',
       });
     } finally {
       setLoading(false);
@@ -150,7 +157,7 @@ const CustomerManagement = () => {
   };
 
   useEffect(() => {
-    if (!searchTerm && filterStatus === "all") {
+    if (!searchTerm && filterStatus === 'all') {
       setFilteredCustomers(customers);
       return;
     }
@@ -159,15 +166,16 @@ const CustomerManagement = () => {
 
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      result = result.filter(customer =>
-        customer.name.toLowerCase().includes(term) ||
-        customer.email.toLowerCase().includes(term) ||
-        (customer.phone && customer.phone.toLowerCase().includes(term))
+      result = result.filter(
+        (customer) =>
+          customer.name.toLowerCase().includes(term) ||
+          customer.email.toLowerCase().includes(term) ||
+          (customer.phone && customer.phone.toLowerCase().includes(term)),
       );
     }
 
-    if (filterStatus !== "all") {
-      result = result.filter(customer => customer.status === filterStatus);
+    if (filterStatus !== 'all') {
+      result = result.filter((customer) => customer.status === filterStatus);
     }
 
     setFilteredCustomers(result);
@@ -181,9 +189,9 @@ const CustomerManagement = () => {
     } catch (error: any) {
       console.error('Error fetching customer orders:', error);
       toast({
-        variant: "destructive",
-        title: "Lỗi",
-        description: error.response?.data?.message || "Không thể tải đơn hàng",
+        variant: 'destructive',
+        title: 'Lỗi',
+        description: error.response?.data?.message || 'Không thể tải đơn hàng',
       });
     } finally {
       setOrdersLoading(false);
@@ -195,32 +203,35 @@ const CustomerManagement = () => {
     await fetchCustomerOrders(customer.id);
   };
 
-  const handleUpdateStatus = async (customerId: number, newStatus: 'active' | 'inactive' | 'vip') => {
+  const handleUpdateStatus = async (
+    customerId: number,
+    newStatus: 'active' | 'inactive' | 'vip',
+  ) => {
     try {
       await customerAPI.updateCustomerStatus(customerId, newStatus);
-      
-      setCustomers(prev =>
-        prev.map(customer =>
-          customer.id === customerId ? { ...customer, status: newStatus } : customer
-        )
+
+      setCustomers((prev) =>
+        prev.map((customer) =>
+          customer.id === customerId ? { ...customer, status: newStatus } : customer,
+        ),
       );
 
-      setFilteredCustomers(prev =>
-        prev.map(customer =>
-          customer.id === customerId ? { ...customer, status: newStatus } : customer
-        )
+      setFilteredCustomers((prev) =>
+        prev.map((customer) =>
+          customer.id === customerId ? { ...customer, status: newStatus } : customer,
+        ),
       );
 
       toast({
-        title: "Cập nhật thành công",
+        title: 'Cập nhật thành công',
         description: `Trạng thái khách hàng đã được cập nhật`,
       });
     } catch (error: any) {
       console.error('Error updating customer status:', error);
       toast({
-        variant: "destructive",
-        title: "Lỗi",
-        description: error.response?.data?.message || "Không thể cập nhật trạng thái",
+        variant: 'destructive',
+        title: 'Lỗi',
+        description: error.response?.data?.message || 'Không thể cập nhật trạng thái',
       });
     }
   };
@@ -229,7 +240,7 @@ const CustomerManagement = () => {
     try {
       setExporting(true);
       const blob = await customerAPI.exportCustomers();
-      
+
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -238,17 +249,17 @@ const CustomerManagement = () => {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      
+
       toast({
-        title: "Xuất file thành công",
-        description: "File Excel đã được tải xuống",
+        title: 'Xuất file thành công',
+        description: 'File Excel đã được tải xuống',
       });
     } catch (error: any) {
       console.error('Error exporting customers:', error);
       toast({
-        variant: "destructive",
-        title: "Lỗi",
-        description: error.response?.data?.message || "Không thể xuất file",
+        variant: 'destructive',
+        title: 'Lỗi',
+        description: error.response?.data?.message || 'Không thể xuất file',
       });
     } finally {
       setExporting(false);
@@ -257,8 +268,8 @@ const CustomerManagement = () => {
 
   const stats = {
     total: customers.length,
-    active: customers.filter((c) => c.status === "active").length,
-    vip: customers.filter((c) => c.status === "vip").length,
+    active: customers.filter((c) => c.status === 'active').length,
+    vip: customers.filter((c) => c.status === 'vip').length,
     totalRevenue: customers.reduce((sum, c) => sum + (c.total_spent || 0), 0),
   };
 
@@ -354,8 +365,8 @@ const CustomerManagement = () => {
               <SelectItem value="vip">VIP</SelectItem>
             </SelectContent>
           </Select>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={handleExportExcel}
             disabled={exporting || customers.length === 0}
             className="w-full sm:w-auto"
@@ -385,9 +396,9 @@ const CustomerManagement = () => {
               <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium mb-2">Không tìm thấy khách hàng</h3>
               <p className="text-muted-foreground">
-                {searchTerm 
-                  ? "Thử tìm kiếm với từ khóa khác hoặc xóa bộ lọc"
-                  : "Chưa có khách hàng nào trong hệ thống"}
+                {searchTerm
+                  ? 'Thử tìm kiếm với từ khóa khác hoặc xóa bộ lọc'
+                  : 'Chưa có khách hàng nào trong hệ thống'}
               </p>
             </div>
           ) : (
@@ -417,11 +428,15 @@ const CustomerManagement = () => {
                         <TableCell className="py-4">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
-                              <span className="text-sm font-bold text-primary">{customer.avatar}</span>
+                              <span className="text-sm font-bold text-primary">
+                                {customer.avatar}
+                              </span>
                             </div>
                             <div>
                               <p className="font-medium text-sm">{customer.name}</p>
-                              <p className="text-xs text-muted-foreground">{formatCustomerId(customer.id)}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {formatCustomerId(customer.id)}
+                              </p>
                             </div>
                           </div>
                         </TableCell>
@@ -433,7 +448,9 @@ const CustomerManagement = () => {
                             </div>
                             <div className="flex items-center gap-1.5">
                               <Phone className="h-3 w-3 text-muted-foreground" />
-                              <span className="text-sm text-muted-foreground">{customer.phone}</span>
+                              <span className="text-sm text-muted-foreground">
+                                {customer.phone}
+                              </span>
                             </div>
                           </div>
                         </TableCell>
@@ -443,18 +460,24 @@ const CustomerManagement = () => {
                           </div>
                         </TableCell>
                         <TableCell className="py-4">
-                          <div className="font-medium">{formatPrice(customer.total_spent || 0)}</div>
+                          <div className="font-medium">
+                            {formatPrice(customer.total_spent || 0)}
+                          </div>
                         </TableCell>
                         <TableCell className="py-4">
                           <span
-                            className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full ${statusConfig[customer.status].color}`}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full ${
+                              statusConfig[customer.status].color
+                            }`}
                           >
-                            {customer.status === "vip" && <Star className="h-3 w-3" />}
+                            {customer.status === 'vip' && <Star className="h-3 w-3" />}
                             {statusConfig[customer.status].label}
                           </span>
                         </TableCell>
                         <TableCell className="py-4 text-sm text-muted-foreground">
-                          {customer.last_order_date ? formatDate(customer.last_order_date) : "Chưa có"}
+                          {customer.last_order_date
+                            ? formatDate(customer.last_order_date)
+                            : 'Chưa có'}
                         </TableCell>
                         <TableCell className="py-4 text-right">
                           <DropdownMenu>
@@ -468,22 +491,26 @@ const CustomerManagement = () => {
                                 <Eye className="h-4 w-4 mr-2" />
                                 Xem chi tiết
                               </DropdownMenuItem>
-                              {customer.status !== "vip" && (
-                                <DropdownMenuItem onClick={() => handleUpdateStatus(customer.id, "vip")}>
+                              {customer.status !== 'vip' && (
+                                <DropdownMenuItem
+                                  onClick={() => handleUpdateStatus(customer.id, 'vip')}
+                                >
                                   <Star className="h-4 w-4 mr-2" />
                                   Nâng cấp VIP
                                 </DropdownMenuItem>
                               )}
-                              {customer.status === "inactive" && (
-                                <DropdownMenuItem onClick={() => handleUpdateStatus(customer.id, "active")}>
+                              {customer.status === 'inactive' && (
+                                <DropdownMenuItem
+                                  onClick={() => handleUpdateStatus(customer.id, 'active')}
+                                >
                                   <UserCheck className="h-4 w-4 mr-2" />
                                   Kích hoạt
                                 </DropdownMenuItem>
                               )}
-                              {customer.status !== "inactive" && (
+                              {customer.status !== 'inactive' && (
                                 <DropdownMenuItem
                                   className="text-destructive"
-                                  onClick={() => handleUpdateStatus(customer.id, "inactive")}
+                                  onClick={() => handleUpdateStatus(customer.id, 'inactive')}
                                 >
                                   <UserX className="h-4 w-4 mr-2" />
                                   Vô hiệu hóa
@@ -521,16 +548,22 @@ const CustomerManagement = () => {
                       {statusConfig[selectedCustomer.status].label}
                     </Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground">{formatCustomerId(selectedCustomer.id)}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {formatCustomerId(selectedCustomer.id)}
+                  </p>
                   <div className="flex items-center gap-4 mt-2 text-sm">
                     <div>
                       <span className="text-muted-foreground">Vai trò: </span>
-                      <span className="font-medium">{selectedCustomer.role === 'vip' ? 'VIP' : selectedCustomer.role}</span>
+                      <span className="font-medium">
+                        {selectedCustomer.role === 'vip' ? 'VIP' : selectedCustomer.role}
+                      </span>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Xác thực: </span>
-                      <Badge variant={selectedCustomer.is_verified ? "outline" : "secondary"} className="ml-1">
-                        {selectedCustomer.is_verified ? "Đã xác thực" : "Chưa xác thực"}
+                      <Badge variant={selectedCustomer.email_verified_at ? 'outline' : 'secondary'}>
+                        {selectedCustomer.email_verified_at
+                          ? 'Đã xác thực email'
+                          : 'Chưa xác thực email'}
                       </Badge>
                     </div>
                   </div>
@@ -555,7 +588,7 @@ const CustomerManagement = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="p-4 rounded-lg bg-muted/50">
                   <div className="flex items-center gap-3 mb-3">
                     <MapPin className="h-4 w-4 text-muted-foreground" />
@@ -563,7 +596,7 @@ const CustomerManagement = () => {
                   </div>
                   <p className="text-sm">{selectedCustomer.address}</p>
                 </div>
-                
+
                 <div className="p-4 rounded-lg bg-muted/50">
                   <div className="flex items-center gap-3 mb-3">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -580,7 +613,7 @@ const CustomerManagement = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="p-4 rounded-lg bg-muted/50">
                   <div className="flex items-center gap-3 mb-3">
                     <Clock className="h-4 w-4 text-muted-foreground" />
@@ -590,7 +623,9 @@ const CustomerManagement = () => {
                     <div>
                       <p className="text-sm text-muted-foreground">Đơn hàng cuối</p>
                       <p className="font-medium">
-                        {selectedCustomer.last_order_date ? formatDate(selectedCustomer.last_order_date) : "Chưa có"}
+                        {selectedCustomer.last_order_date
+                          ? formatDate(selectedCustomer.last_order_date)
+                          : 'Chưa có'}
                       </p>
                     </div>
                   </div>
@@ -600,17 +635,23 @@ const CustomerManagement = () => {
               {/* Stats */}
               <div className="grid grid-cols-3 gap-4">
                 <div className="p-4 rounded-lg bg-primary/5 text-center">
-                  <p className="text-2xl font-bold text-primary">{selectedCustomer.orders_count || 0}</p>
+                  <p className="text-2xl font-bold text-primary">
+                    {selectedCustomer.orders_count || 0}
+                  </p>
                   <p className="text-sm text-muted-foreground">Đơn hàng</p>
                 </div>
                 <div className="p-4 rounded-lg bg-primary/5 text-center">
-                  <p className="text-lg font-bold text-primary">{formatPrice(selectedCustomer.total_spent || 0)}</p>
+                  <p className="text-lg font-bold text-primary">
+                    {formatPrice(selectedCustomer.total_spent || 0)}
+                  </p>
                   <p className="text-sm text-muted-foreground">Tổng chi tiêu</p>
                 </div>
                 <div className="p-4 rounded-lg bg-primary/5 text-center">
                   <p className="text-lg font-bold text-primary">
-                    {selectedCustomer.orders_count && selectedCustomer.orders_count > 0 
-                      ? formatPrice((selectedCustomer.total_spent || 0) / selectedCustomer.orders_count)
+                    {selectedCustomer.orders_count && selectedCustomer.orders_count > 0
+                      ? formatPrice(
+                          (selectedCustomer.total_spent || 0) / selectedCustomer.orders_count,
+                        )
                       : formatPrice(0)}
                   </p>
                   <p className="text-sm text-muted-foreground">TB/đơn</p>
@@ -621,11 +662,9 @@ const CustomerManagement = () => {
               <div className="border-t pt-4">
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="font-medium">Lịch sử mua hàng gần đây</h4>
-                  <Badge variant="outline">
-                    {selectedCustomerOrders.length} đơn hàng
-                  </Badge>
+                  <Badge variant="outline">{selectedCustomerOrders.length} đơn hàng</Badge>
                 </div>
-                
+
                 {ordersLoading ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />

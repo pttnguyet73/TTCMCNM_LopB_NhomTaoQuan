@@ -196,13 +196,14 @@ class OrderController extends Controller
     }
 
 
-    public function index()
+    public function index(Request $request)
     {
-        $orders = DB::table('orders')
+        $query = DB::table('orders')
             ->join('users', 'users.id', '=', 'orders.user_id')
             ->leftJoin('address', 'address.user_id', '=', 'users.id')
             ->select(
                 'orders.id',
+                'orders.user_id',
                 'orders.total_amount',
                 'orders.status',
                 'orders.shipping_fee',
@@ -214,76 +215,40 @@ class OrderController extends Controller
                 'users.email',
                 'users.phone as user_phone',
                 'address.street',
-                'address.district',
-            )
+                'address.district'
+            );
+
+        // ✅ FILTER THEO CUSTOMER (QUAN TRỌNG)
+        if ($request->filled('customer_id')) {
+            $query->where('orders.user_id', $request->customer_id);
+        }
+
+        $orders = $query
             ->orderByDesc('orders.created_at')
             ->get()
             ->map(function ($order) {
 
-                // Tạo địa chỉ
                 $addressParts = array_filter([
                     $order->street,
                     $order->district,
                 ]);
 
-                // Tính subtotal từ order_item
-                $orderItems = DB::table('order_item')
-                    ->where('order_id', $order->id)
-                    ->join('products', 'products.id', '=', 'order_item.product_id')
-                    ->select('order_item.quantity', 'products.price')
-                    ->get();
-
-                $subtotal = $orderItems->sum(function ($item) {
-                    return $item->quantity * $item->price;
-                });
-
-                // Tính giảm giá nếu có coupon
-                $discount = 0;
-                if ($order->coupon_code) {
-                    $coupon = DB::table('coupon')->where('code', $order->coupon_code)->first();
-                    if ($coupon) {
-                        $discount = ($coupon->type == 'percentage')
-                            ? round($subtotal * ($coupon->value / 100), 0)
-                            : round($coupon->value, 0);
-                    }
-                }
-
-                // Tính tổng tiền
-                $shippingFee = $order->shipping_fee ?? 0;
-                $totalAmount = round($subtotal - $discount + $shippingFee, 0);
-
-                // Format ngày tháng
-                $createdAtFormatted = $order->created_at ? date('d/m/Y H:i', strtotime($order->created_at)) : 'Chưa cập nhật';
-
                 return [
-                    'id'       => '#ORD-' . str_pad($order->id, 3, '0', STR_PAD_LEFT),
-                    'raw_id'   => $order->id,
-                    'customer' => $order->customer,
-                    'email'    => $order->email,
-                    'phone'    => $order->user_phone,
-                    'address'  => !empty($addressParts) ? implode(', ', $addressParts) : 'Chưa cập nhật',
-
-                    // Số tiền hiển thị
-                    'subtotal' => number_format($subtotal, 0, ',', '.') . ' đ',
-                    'discount' => number_format($discount, 0, ',', '.') . ' đ',
-                    'shipping_fee' => number_format($shippingFee, 0, ',', '.') . ' đ',
-                    'total_amount' => number_format($totalAmount, 0, ',', '.') . ' đ',
-                    'total_raw' => (float) $totalAmount,
-
-                    'status'     => $order->status, // Trả thẳng tiếng Việt
-                    'status_key' => $order->status, // Key cũng tiếng Việt luôn
-                    'payment_method'     => $order->payment_method,
-                    'payment_method_key' => $order->payment_method,
-                    'tracking_number' => $order->tracking_number,
-                    'created_at' => $createdAtFormatted,
+                    'id' => $order->id,
+                    'order_number' => 'ORD-' . str_pad($order->id, 6, '0', STR_PAD_LEFT),
+                    'total_amount' => (float) $order->total_amount,
+                    'status' => $order->status,
+                    'shipping_fee' => (float) ($order->shipping_fee ?? 0),
+                    'created_at' => $order->created_at,
                 ];
             });
 
         return response()->json([
             'success' => true,
-            'data'    => $orders
+            'data' => $orders
         ]);
     }
+
 
     public function validateCoupon(Request $request)
     {
