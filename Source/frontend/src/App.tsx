@@ -16,7 +16,7 @@ import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import SocialCallback from "./pages/SocialCallback";
 import AdminGuard from "./pages/AuthGuard.tsx";
-import Profile from "./pages/profile";
+import Profile from "./pages/Profile.tsx";
 
 const queryClient = new QueryClient();
 
