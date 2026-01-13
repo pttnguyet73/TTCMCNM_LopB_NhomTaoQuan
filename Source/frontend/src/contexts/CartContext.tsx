@@ -1,16 +1,38 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Product } from '@/data/products';
 
-export interface CartItem {
-  product: Product;
-  quantity: number;
+interface CartItemProduct {
+  id: string; // ✅ Sửa: id là string thay vì number
+  name: string;
+  price: number;
+  image: string;
+  description: string;
+  colors?: Array<{ name: string; hex: string }>;
+  storage?: string[];
+  category?: string;
+  rating?: number;
+  reviews?: number;
+  isNew?: boolean;
+  originalPrice?: number;
+  inStock?: boolean;
+  specs?: Array<{ label: string; value: string }>;
+  images?: string[];
+}
+
+interface CartItem {
+  id: string; // ✅ Sửa: id là string
+  name: string;
+  price: number;
+  image: string;
+  description: string;
   selectedColor: string;
   selectedStorage: string;
+  quantity: number;
+  product: CartItemProduct;
 }
 
 interface CartContextType {
   items: CartItem[];
-  addToCart: (product: Product, color: string, storage: string) => void;
+  addToCart: (product: CartItemProduct, color: string, storage: string, quantity?: number) => void;
   removeFromCart: (productId: string, color: string, storage: string) => void;
   updateQuantity: (productId: string, color: string, storage: string, quantity: number) => void;
   clearCart: () => void;
@@ -22,54 +44,94 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [items, setItems] = useState<CartItem[]>(() => {
-    const saved = localStorage.getItem('cart');
-    return saved ? JSON.parse(saved) : [];
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('cart');
+      return saved ? JSON.parse(saved) : [];
+    }
+    return [];
   });
 
   useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(items));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('cart', JSON.stringify(items));
+    }
   }, [items]);
 
-  const addToCart = (product: Product, color: string, storage: string) => {
-    setItems(prev => {
+  const addToCart = (
+    product: CartItemProduct,
+    color: string,
+    storage: string,
+    quantity: number = 1,
+  ) => {
+    setItems((prev) => {
       const existingIndex = prev.findIndex(
-        item => item.product.id === product.id && 
-                item.selectedColor === color && 
-                item.selectedStorage === storage
+        (item) =>
+          item.product.id === product.id &&
+          item.selectedColor === color &&
+          item.selectedStorage === storage,
       );
 
       if (existingIndex > -1) {
         const updated = [...prev];
-        updated[existingIndex].quantity += 1;
+        updated[existingIndex].quantity += quantity;
         return updated;
       }
 
-      return [...prev, { product, quantity: 1, selectedColor: color, selectedStorage: storage }];
+      const newItem: CartItem = {
+        id: product.id, // ✅ Giữ nguyên id string
+        name: product.name,
+        price: product.price,
+        image: product.image,
+        description: product.description,
+        selectedColor: color,
+        selectedStorage: storage,
+        quantity: quantity,
+        product: product,
+      };
+
+      return [...prev, newItem];
     });
   };
 
   const removeFromCart = (productId: string, color: string, storage: string) => {
-    setItems(prev => prev.filter(
-      item => !(item.product.id === productId && 
-                item.selectedColor === color && 
-                item.selectedStorage === storage)
-    ));
+    setItems((prev) =>
+      prev.filter(
+        (item) =>
+          !(
+            item.product.id === productId &&
+            item.selectedColor === color &&
+            item.selectedStorage === storage
+          ),
+      ),
+    );
   };
 
   const updateQuantity = (productId: string, color: string, storage: string, quantity: number) => {
-    if (quantity <= 0) {
-      removeFromCart(productId, color, storage);
-      return;
-    }
-
-    setItems(prev => prev.map(item => {
-      if (item.product.id === productId && 
-          item.selectedColor === color && 
-          item.selectedStorage === storage) {
-        return { ...item, quantity };
+    setItems((prev) => {
+      if (quantity <= 0) {
+        return prev.filter(
+          (item) =>
+            !(
+              item.product.id === productId &&
+              item.selectedColor === color &&
+              item.selectedStorage === storage
+            ),
+        );
       }
-      return item;
-    }));
+
+      const updated = prev.map((item) => {
+        if (
+          item.product.id === productId &&
+          item.selectedColor === color &&
+          item.selectedStorage === storage
+        ) {
+          return { ...item, quantity };
+        }
+        return item;
+      });
+
+      return updated;
+    });
   };
 
   const clearCart = () => {
@@ -77,18 +139,20 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-  const totalPrice = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+  const totalPrice = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   return (
-    <CartContext.Provider value={{
-      items,
-      addToCart,
-      removeFromCart,
-      updateQuantity,
-      clearCart,
-      totalItems,
-      totalPrice,
-    }}>
+    <CartContext.Provider
+      value={{
+        items,
+        addToCart,
+        removeFromCart,
+        updateQuantity,
+        clearCart,
+        totalItems,
+        totalPrice,
+      }}
+    >
       {children}
     </CartContext.Provider>
   );

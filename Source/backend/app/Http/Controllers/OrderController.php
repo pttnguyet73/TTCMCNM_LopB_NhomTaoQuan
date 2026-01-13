@@ -6,18 +6,18 @@ use App\Models\Order;
 use App\Http\Requests\OrderRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
-use DateTime;
 use Exception;
 
 class OrderController extends Controller
 {
-    //
+    // Tạo đơn hàng
     public function store(OrderRequest $request)
     {
         $order = Order::create($request->validated());
         return response()->json($order, 201);
     }
 
+    // Cập nhật đơn hàng
     public function update(OrderRequest $request, $id)
     {
         $order = Order::findOrFail($id);
@@ -25,6 +25,7 @@ class OrderController extends Controller
         return response()->json($order, 200);
     }
 
+    // Xóa đơn hàng
     public function destroy($id)
     {
         $order = Order::findOrFail($id);
@@ -32,6 +33,7 @@ class OrderController extends Controller
         return response()->json(null, 204);
     }
 
+    // Cập nhật trạng thái đơn hàng
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
@@ -39,22 +41,19 @@ class OrderController extends Controller
         ]);
 
         $order = Order::findOrFail($id);
-        $order->status = $request->status; // Lưu trực tiếp tiếng Việt
+        $order->status = $request->status;
         $order->save();
 
         return response()->json([
             'success' => true,
             'message' => 'Cập nhật trạng thái thành công',
-            'status' => $order->status // Trả ra luôn tiếng Việt
+            'status' => $order->status
         ]);
     }
 
-
-
-
+    // Lấy chi tiết đơn hàng
     public function show($id)
     {
-        // Lấy thông tin đơn hàng
         $order = DB::table('orders')
             ->join('users', 'users.id', '=', 'orders.user_id')
             ->leftJoin('address', 'address.user_id', '=', 'users.id')
@@ -137,21 +136,10 @@ class OrderController extends Controller
         $shippingFee = $order->shipping_fee ?? 0;
         $totalAmount = round($subtotal - $discount + $shippingFee, 0);
 
-        // Map trạng thái sang tiếng Việt
-
-        $vietnameseStatus = $order->status;
-
         // Địa chỉ đầy đủ
-        $addressParts = [];
-        if ($order->street) {
-            $addressParts[] = $order->street;
-        }
-        if ($order->district) {
-            $addressParts[] = $order->district;
-        }
+        $addressParts = array_filter([$order->street, $order->district]);
         $fullAddress = !empty($addressParts) ? implode(', ', $addressParts) : 'Chưa cập nhật';
 
-        // Trả JSON
         return response()->json([
             'success' => true,
             'data' => [
@@ -195,7 +183,7 @@ class OrderController extends Controller
         ]);
     }
 
-
+    // Lấy danh sách đơn hàng
     public function index(Request $request)
     {
         $query = DB::table('orders')
@@ -218,38 +206,63 @@ class OrderController extends Controller
                 'address.district'
             );
 
-        // ✅ FILTER THEO CUSTOMER (QUAN TRỌNG)
         if ($request->filled('customer_id')) {
             $query->where('orders.user_id', $request->customer_id);
         }
 
-        $orders = $query
-            ->orderByDesc('orders.created_at')
-            ->get()
-            ->map(function ($order) {
+        $orders = $query->orderByDesc('orders.created_at')->get()->map(function ($order) {
+            // Tạo địa chỉ
+            $addressParts = array_filter([$order->street, $order->district]);
 
-                $addressParts = array_filter([
-                    $order->street,
-                    $order->district,
-                ]);
+            // Tính subtotal từ order_item
+            $orderItems = DB::table('order_item')
+                ->where('order_id', $order->id)
+                ->join('products', 'products.id', '=', 'order_item.product_id')
+                ->select('order_item.quantity', 'products.price')
+                ->get();
 
-                return [
-                    'id' => $order->id,
-                    'order_number' => 'ORD-' . str_pad($order->id, 6, '0', STR_PAD_LEFT),
-                    'total_amount' => (float) $order->total_amount,
-                    'status' => $order->status,
-                    'shipping_fee' => (float) ($order->shipping_fee ?? 0),
-                    'created_at' => $order->created_at,
-                ];
-            });
+            $subtotal = $orderItems->sum(fn ($item) => $item->quantity * $item->price);
 
-        return response()->json([
-            'success' => true,
-            'data' => $orders
-        ]);
+            // Tính giảm giá
+            $discount = 0;
+            if ($order->coupon_code) {
+                $coupon = DB::table('coupon')->where('code', $order->coupon_code)->first();
+                if ($coupon) {
+                    $discount = ($coupon->type == 'percentage')
+                        ? round($subtotal * ($coupon->value / 100), 0)
+                        : round($coupon->value, 0);
+                }
+            }
+
+            $shippingFee = $order->shipping_fee ?? 0;
+            $totalAmount = round($subtotal - $discount + $shippingFee, 0);
+            $createdAtFormatted = $order->created_at ? date('d/m/Y H:i', strtotime($order->created_at)) : 'Chưa cập nhật';
+
+            return [
+                'id' => '#ORD-' . str_pad($order->id, 3, '0', STR_PAD_LEFT),
+                'raw_id' => $order->id,
+                'customer' => $order->customer,
+                'email' => $order->email,
+                'phone' => $order->user_phone,
+                'address' => !empty($addressParts) ? implode(', ', $addressParts) : 'Chưa cập nhật',
+                'subtotal' => number_format($subtotal, 0, ',', '.') . ' đ',
+                'discount' => number_format($discount, 0, ',', '.') . ' đ',
+                'shipping_fee' => number_format($shippingFee, 0, ',', '.') . ' đ',
+                'total_amount' => number_format($totalAmount, 0, ',', '.') . ' đ',
+                'total_raw' => (float) $totalAmount,
+                'status' => $order->status,
+                'status_key' => $order->status,
+                'payment_method' => $order->payment_method,
+                'payment_method_key' => $order->payment_method,
+                'tracking_number' => $order->tracking_number,
+                'created_at' => $createdAtFormatted,
+            ];
+        });
+
+        return response()->json(['success' => true, 'data' => $orders]);
     }
 
-
+    // Validate coupon
     public function validateCoupon(Request $request)
     {
         $request->validate([
@@ -264,30 +277,15 @@ class OrderController extends Controller
             ->first();
 
         if (!$coupon) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Mã giảm giá không tồn tại'
-            ], 404);
+            return response()->json(['success' => false, 'message' => 'Mã giảm giá không tồn tại'], 404);
         }
 
-        // Kiểm tra ngày hiệu lực
         $today = date('Y-m-d');
-        $isValidDate = true;
-        if ($coupon->start_date && $coupon->start_date > $today) {
-            $isValidDate = false;
-        }
-        if ($coupon->end_date && $coupon->end_date < $today) {
-            $isValidDate = false;
+        if (($coupon->start_date && $coupon->start_date > $today) ||
+            ($coupon->end_date && $coupon->end_date < $today)) {
+            return response()->json(['success' => false, 'message' => 'Mã giảm giá đã hết hạn'], 400);
         }
 
-        if (!$isValidDate) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Mã giảm giá đã hết hạn'
-            ], 400);
-        }
-
-        // Kiểm tra giá trị đơn hàng tối thiểu
         if ($coupon->min_order_amount && $request->order_amount < $coupon->min_order_amount) {
             return response()->json([
                 'success' => false,
@@ -295,21 +293,13 @@ class OrderController extends Controller
             ], 400);
         }
 
-        // Kiểm tra giới hạn sử dụng
         if ($coupon->usage_limit && $coupon->used_count >= $coupon->usage_limit) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Mã giảm giá đã hết lượt sử dụng'
-            ], 400);
+            return response()->json(['success' => false, 'message' => 'Mã giảm giá đã hết lượt sử dụng'], 400);
         }
 
-        // Tính discount
-        $discount = 0;
-        if ($coupon->type == 'percentage') {
-            $discount = $request->order_amount * ($coupon->value / 100);
-        } else {
-            $discount = $coupon->value;
-        }
+        $discount = $coupon->type == 'percentage'
+            ? $request->order_amount * ($coupon->value / 100)
+            : $coupon->value;
 
         return response()->json([
             'success' => true,

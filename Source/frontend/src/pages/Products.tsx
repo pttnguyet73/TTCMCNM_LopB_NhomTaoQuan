@@ -51,10 +51,8 @@ const categories = [
   { id: '3', name: 'Mac' },
 ];
 
-// Hàm chuyển đổi dữ liệu từ API sang format cho CartContext
 const mapApiToLocalProduct = (apiProduct: ApiProduct): LocalProduct => {
-  // Map category từ API sang định dạng 'iphone' | 'ipad' | 'mac'
-  let category: 'iphone' | 'ipad' | 'mac' = 'iphone'; // Mặc định
+  let category: 'iphone' | 'ipad' | 'mac' = 'iphone';
 
   if (apiProduct.category) {
     const catName = apiProduct.category.name.toLowerCase();
@@ -66,7 +64,6 @@ const mapApiToLocalProduct = (apiProduct: ApiProduct): LocalProduct => {
       category = 'mac';
     }
   } else if (apiProduct.category_id) {
-    // Map theo ID nếu không có category object
     const categoryId = apiProduct.category_id.toString();
     if (categoryId === '1' || categoryId === 'iphone') {
       category = 'iphone';
@@ -77,23 +74,18 @@ const mapApiToLocalProduct = (apiProduct: ApiProduct): LocalProduct => {
     }
   }
 
-  // Xử lý ảnh
   const images = apiProduct.images?.map((img) => img.image_url) || [];
   const mainImage = images.length > 0 ? images[0] : '/images/placeholder.jpg';
 
-  // Xử lý màu sắc
   const colors =
     apiProduct.colors?.map((color) => ({
       name: color.name || 'Default',
       hex: color.hex || '#000000',
     })) || [];
 
-  // Xử lý specs (nếu API không có, tạo mặc định từ thông tin sản phẩm)
   const specs: { label: string; value: string }[] = [];
 
-  // Thêm specs mặc định nếu cần
   if (apiProduct.specs && Array.isArray(apiProduct.specs)) {
-    // Nếu specs từ API có sẵn dạng { label, value }
     specs.push(
       ...apiProduct.specs.map((spec: any) => ({
         label: spec.label || spec.key || '',
@@ -113,10 +105,10 @@ const mapApiToLocalProduct = (apiProduct: ApiProduct): LocalProduct => {
     description: apiProduct.description || '',
     specs: specs,
     colors: colors,
-    storage: [], // Cần lấy từ API nếu có, tạm thời để rỗng
+    storage: [],
     rating: apiProduct.rating || 0,
     reviews: apiProduct.review_count || 0,
-    inStock: apiProduct.status === 1, // status 1 = còn hàng
+    inStock: apiProduct.status === 1,
     isNew: apiProduct.is_new || false,
     isFeatured: apiProduct.is_featured || false,
   };
@@ -129,13 +121,12 @@ export default function ProductsPage() {
   const [isGridView, setIsGridView] = useState(true);
   const [sortBy, setSortBy] = useState('featured');
   const [selectedPriceRange, setSelectedPriceRange] = useState<number | null>(null);
-  const [products, setProducts] = useState<ApiProduct[]>([]); // Giữ nguyên API product
+  const [products, setProducts] = useState<ApiProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const selectedCategory = searchParams.get('category') || 'all';
 
-  // Hàm fetch sản phẩm từ API
   const fetchProducts = async () => {
     setLoading(true);
     setError(null);
@@ -420,7 +411,6 @@ export default function ProductsPage() {
               )}
             >
               {products.map((apiProduct, index) => {
-                // Chuyển đổi từ API product sang local product cho CartContext
                 const localProduct = mapApiToLocalProduct(apiProduct);
                 return <ProductCard key={apiProduct.id} product={localProduct} index={index} />;
               })}
