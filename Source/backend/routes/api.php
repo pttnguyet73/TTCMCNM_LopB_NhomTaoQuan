@@ -9,16 +9,19 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\AdminUserController;
+use App\Http\Controllers\CartController;
+use App\Http\Controllers\CouponController;
+use App\Http\Middleware\RoleMiddleware;
 
 
-Route::middleware(['auth:sanctum', 'admin'])->prefix('product-colors')->group(function () {
+Route::middleware(['auth:sanctum'])->prefix('product-colors')->group(function () {
     Route::get('/', [App\Http\Controllers\productColorController::class, 'index']); 
     Route::post('/', [App\Http\Controllers\productColorController::class, 'store']);       
     Route::get('/{id}', [App\Http\Controllers\productColorController::class, 'show']);   
     Route::put('/{id}', [App\Http\Controllers\productColorController::class, 'update']);  
     Route::delete('/{id}', [App\Http\Controllers\productColorController::class, 'destroy']); 
 });
-Route::middleware(['auth:sanctum', 'admin'])->prefix('product-specs')->group(function () {
+Route::middleware(['auth:sanctum'])->prefix('product-specs')->group(function () {
     Route::get('/', [App\Http\Controllers\ProductSpecController::class, 'index']); 
     Route::post('/', [App\Http\Controllers\ProductSpecController::class, 'store']);       
     Route::get('/{id}', [App\Http\Controllers\ProductSpecController::class, 'show']);   
@@ -26,7 +29,7 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('product-specs')->group(fun
     Route::delete('/{id}', [App\Http\Controllers\ProductSpecController::class, 'destroy']); 
 });
 
-Route::middleware(['auth:sanctum', 'admin'])->prefix('product-images')->group(function () {
+Route::middleware(['auth:sanctum'])->prefix('product-images')->group(function () {
     Route::get('/', [App\Http\Controllers\ProductImageController::class, 'index']); 
     Route::post('/', [App\Http\Controllers\ProductImageController::class, 'store']);       
     Route::get('/{id}', [App\Http\Controllers\ProductImageController::class, 'show']);   
@@ -35,15 +38,14 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('product-images')->group(fu
 });
 
 
-Route::middleware(['auth:sanctum', 'admin'])->prefix('product-storages')->group(function () {
-    Route::get('/', [App\Http\Controllers\ProductStorageController::class, 'index']); 
-    Route::post('/', [App\Http\Controllers\ProductStorageController::class, 'store']);       
-    Route::get('/{id}', [App\Http\Controllers\ProductStorageController::class, 'show']);   
-    Route::put('/{id}', [App\Http\Controllers\ProductStorageController::class, 'update']);  
-    Route::delete('/{id}', [App\Http\Controllers\ProductStorageController::class, 'destroy']); 
-});
+// Route::middleware(['auth:sanctum', 'saler'])->prefix('product-storages')->group(function () {
+//     Route::get('/', [App\Http\Controllers\ProductStorageController::class, 'index']); 
+//     Route::post('/', [App\Http\Controllers\ProductStorageController::class, 'store']);       
+//     Route::get('/{id}', [App\Http\Controllers\ProductStorageController::class, 'show']);   
+//     Route::put('/{id}', [App\Http\Controllers\ProductStorageController::class, 'update']);  
+//     Route::delete('/{id}', [App\Http\Controllers\ProductStorageController::class, 'destroy']); 
+// });
 
-// Public routes (không cần đăng nhập)
 Route::prefix('categories')->group(function () {
     Route::get('/', [App\Http\Controllers\CategoryController::class, 'index']); 
     Route::get('/{id}', [App\Http\Controllers\CategoryController::class, 'show']);   
@@ -54,15 +56,14 @@ Route::prefix('products')->group(function () {
     Route::get('/{id}', [ProductController::class, 'show']);   
 });
 
-// Protected routes (cần đăng nhập admin)
-Route::middleware(['auth:sanctum', 'admin'])->prefix('categories')->group(function () {
+Route::middleware(['auth:sanctum'])->prefix('categories')->group(function () {
     Route::get('/', [App\Http\Controllers\CategoryController::class, 'index']);
     Route::post('/', [App\Http\Controllers\CategoryController::class, 'store']);       
     Route::put('/{id}', [App\Http\Controllers\CategoryController::class, 'update']);  
     Route::delete('/{id}', [App\Http\Controllers\CategoryController::class, 'destroy']); 
 });
 
-Route::middleware(['auth:sanctum', 'admin'])->prefix('products')->group(function () {
+Route::middleware(['auth:sanctum'])->prefix('products')->group(function () {
     Route::post('/', [ProductController::class, 'store']);       
     Route::put('/{id}', [ProductController::class, 'update']);  
     Route::delete('/{id}', [ProductController::class, 'destroy']);
@@ -71,12 +72,14 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('products')->group(function
 Route::post('/product-coupons', [App\Http\Controllers\ProductCouponController::class, 'attachCoupon']);
 Route::delete('/product-coupons', [App\Http\Controllers\ProductCouponController::class, 'detachCoupon']);
 
-Route::post('/coupons', [App\Http\Controllers\CouponController::class, 'store']);
-Route::get('/coupons/{id}', [App\Http\Controllers\CouponController::class, 'show']);
-Route::put('/coupons/{id}', [App\Http\Controllers\CouponController::class, 'update']);
-Route::delete('/coupons/{id}', [App\Http\Controllers\CouponController::class, 'destroy']);
-Route::get('/coupons', [App\Http\Controllers\CouponController::class, 'index']);
-Route::post('/coupons/soft-delete/{id}', [App\Http\Controllers\CouponController::class, 'softDelete']);
+route::middleware(['auth:sanctum'])->prefix('coupons')->group(function () {
+    Route::get('/', [CouponController::class, 'index']); 
+    Route::post('/', [CouponController::class, 'store']);       
+    Route::put('/{id}', [CouponController::class, 'update']);  
+    Route::delete('/{id}', [CouponController::class, 'destroy']); 
+    Route::get('/{code}', [CouponController::class, 'getCode']);
+}); 
+
 
 Route::post('/reviews', [App\Http\Controllers\ReviewController::class, 'store']);
 Route::get('/reviews/{id}', [App\Http\Controllers\ReviewController::class, 'show']);
@@ -84,10 +87,13 @@ Route::put('/reviews/{id}', [App\Http\Controllers\ReviewController::class, 'upda
 Route::delete('/reviews/{id}', [App\Http\Controllers\ReviewController::class, 'destroy']);
 Route::get('/reviews', [App\Http\Controllers\ReviewController::class, 'index']);
 
-Route::post('/carts', [App\Http\Controllers\CartController::class, 'store']);
-Route::get('/carts/{id}', [App\Http\Controllers\CartController::class, 'show']);
-Route::put('/carts/{id}', [App\Http\Controllers\CartController::class, 'update']);
-Route::delete('/carts/{id}', [App\Http\Controllers\CartController::class, 'destroy']);
+Route::middleware(['auth:sanctum'])->prefix('cart')->group(function () {
+     Route::get('/', [CartController::class, 'index']);
+    Route::post('/', [CartController::class, 'store']);
+    Route::put('/{id}', [CartController::class, 'update']);
+    Route::delete('/{id}', [CartController::class, 'destroy']);
+    Route::delete('/', [CartController::class, 'clear']);
+});
 
 Route::post('/cart-items', [App\Http\Controllers\CartItemController::class, 'store']);
 Route::get('/cart-items/{id}', [App\Http\Controllers\CartItemController::class, 'show']);
@@ -114,14 +120,16 @@ Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
 Route::post('verify-email', [AuthController::class, 'verifyEmail']);
 Route::post('resend-code', [AuthController::class, 'resendCode']);
+Route::post('reset-password', [AuthController::class, 'resetPassword']);
+Route::get('profile', [AuthController::class, 'getProfile'])->middleware('auth:sanctum');
 
-Route::middleware(['auth:sanctum', 'admin'])->get('/admin', function (Request $request) {
+Route::middleware(['auth:sanctum', RoleMiddleware::class . ':admin,saler'])->get('/admin', function (Request $request) {
     return response()->json([
         'user' => $request->user()
     ]);
 });
 
-Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
+Route::middleware(['auth:sanctum'])->prefix('admin')->group(function () {
     Route::get('/customers', [CustomerController::class, 'index']);
 });
 

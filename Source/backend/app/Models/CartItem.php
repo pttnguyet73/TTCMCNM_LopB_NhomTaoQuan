@@ -14,6 +14,7 @@ class CartItem extends Model
         'quantity',
         'color',
         'storage',
+        'image',
     ];
 
     public function cart()

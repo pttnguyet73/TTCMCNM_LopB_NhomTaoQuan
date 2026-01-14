@@ -24,9 +24,13 @@ class AuthController extends Controller
         $userInput['password'] = Hash::make($userInput['password']);
         $userInput['code'] = Str::random(6);
         $userInput['code_expires_at'] = now()->addMinutes(10);
+        $userInput['code_purpose'] = 'register';
+
         $user = User::create($userInput);
 
-        Mail::to($user->email)->send(new SendCodeVerifyEmail($user->code));
+        Mail::to($user->email)->send(
+            new SendCodeVerifyEmail($user->code)
+        );
 
         return response()->json([
             'message' => 'User registered successfully',
@@ -34,44 +38,53 @@ class AuthController extends Controller
         ], 201);
     }
 
-    public function verifyEmail(VerifyCodeRequest $request)
+
+    public function verifyEmail(Request $request)
     {
-        $userInput = $request->validated();
-        $user = User::where('email', $userInput['email'])->first();
-        
+        $request->validate([
+            'email' => 'required|email',
+            'code' => 'required|string',
+            'purpose' => 'nullable|in:register,reset_password',
+        ]);
+
+        $email = $request->email;
+        $code = $request->code;
+        $purpose = $request->input('purpose', 'register');
+
+        $user = User::where('email', $email)->first();
+
         if (!$user) {
-            return response()->json([
-                'message' => 'User not found',
-            ], 404);
+            return response()->json(['message' => 'User not found'], 404);
         }
 
-        if ($user->code !== $userInput['code']) {
-            return response()->json([
-                'message' => 'Invalid code',
-            ], 400);
+        if ($user->code !== $code) {
+            return response()->json(['message' => 'Invalid code'], 400);
         }
 
-        if ($user->code_expires_at < now()) {
-            return response()->json([
-                'message' => 'Code expired',
-            ], 400);
+        if (!$user->code_expires_at || $user->code_expires_at->isPast()) {
+            return response()->json(['message' => 'Code expired'], 400);
         }
-        
-        $user->is_verified = true;
+
+        if ($purpose === 'register') {
+            $user->email_verified_at = now();
+        }
+
+        // clear OTP
         $user->code = null;
         $user->code_expires_at = null;
         $user->save();
 
         return response()->json([
-            'message' => 'Email verified successfully',
-            'user' => new UserResource($user)
-        ], 200);
+            'message' => 'Verify code success'
+        ]);
     }
+
+
 
     public function resendCode(ResendCodeRequest $request)
     {
-        $userInput = $request->validated();
-        $user = User::where('email', $userInput['email'])->first();
+        $data = $request->validated();
+        $user = User::where('email', $data['email'])->first();
 
         if (!$user) {
             return response()->json([
@@ -79,18 +92,33 @@ class AuthController extends Controller
             ], 404);
         }
 
-        $code = Str::random(6);
-        $expiresAt = now()->addMinutes(10);
+        // mặc định resend cho verify đăng ký
+        $purpose = $data['purpose'] ?? 'register';
+
+        // quên mật khẩu thì user phải tồn tại
+        if ($purpose === 'reset_password' && !$user->is_verified) {
+            return response()->json([
+                'message' => 'Email chưa được xác thực',
+            ], 400);
+        }
+
+        $code = rand(100000, 999999);
+
         $user->code = $code;
-        $user->code_expires_at = $expiresAt;
+        $user->code_expires_at = now()->addMinutes(10);
+        $user->code_purpose = $purpose;
         $user->save();
 
-        Mail::to($user->email)->send(new SendCodeVerifyEmail($code));
+        Mail::to($user->email)->send(
+            new SendCodeVerifyEmail($code)
+        );
 
         return response()->json([
             'message' => 'Code sent successfully',
+            'purpose' => $purpose
         ], 200);
     }
+
 
     public function login(LoginRequest $request)
     {
@@ -137,6 +165,22 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'Logout successful',
+        ], 200);
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email|exists:users,email',
+            'password' => 'required|min:6|confirmed',
+        ]);
+
+        User::where('email', $request->email)->update([
+            'password' => Hash::make($request->password),
+        ]);
+
+        return response()->json([
+            'message' => 'Password reset successfully'
         ], 200);
     }
 }

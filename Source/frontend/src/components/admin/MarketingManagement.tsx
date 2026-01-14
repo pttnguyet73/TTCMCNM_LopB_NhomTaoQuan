@@ -46,20 +46,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { formatPrice } from "@/data/products";
+import { useCoupon } from "@/contexts/Coupon";
 
 interface Coupon {
-  id: string;
+  id: number;
   code: string;
   type: "percent" | "fixed";
   value: number;
-  minOrder: number;
-  maxDiscount: number;
-  usageLimit: number;
-  usageCount: number;
-  status: "active" | "expired" | "disabled";
-  startDate: string;
-  endDate: string;
+  min_order_amount: number;
+  usage_limit: number;
+  used_count: number;
+  is_active: boolean;
+  start_date: string;
+  end_date: string;
 }
+
 
 interface EmailCampaign {
   id: string;
@@ -82,48 +83,6 @@ interface SEOSettings {
   sitemap: boolean;
   analytics: string;
 }
-
-const mockCoupons: Coupon[] = [
-  {
-    id: "CPN-001",
-    code: "TET2024",
-    type: "percent",
-    value: 15,
-    minOrder: 5000000,
-    maxDiscount: 2000000,
-    usageLimit: 100,
-    usageCount: 45,
-    status: "active",
-    startDate: "2024-01-15",
-    endDate: "2024-02-15",
-  },
-  {
-    id: "CPN-002",
-    code: "WELCOME10",
-    type: "percent",
-    value: 10,
-    minOrder: 2000000,
-    maxDiscount: 1000000,
-    usageLimit: 500,
-    usageCount: 234,
-    status: "active",
-    startDate: "2024-01-01",
-    endDate: "2024-12-31",
-  },
-  {
-    id: "CPN-003",
-    code: "FREESHIP",
-    type: "fixed",
-    value: 50000,
-    minOrder: 1000000,
-    maxDiscount: 50000,
-    usageLimit: 1000,
-    usageCount: 1000,
-    status: "expired",
-    startDate: "2023-12-01",
-    endDate: "2024-01-01",
-  },
-];
 
 const mockEmailCampaigns: EmailCampaign[] = [
   {
@@ -181,23 +140,22 @@ const statusConfig = {
 };
 
 const MarketingManagement = () => {
-  const [coupons, setCoupons] = useState<Coupon[]>(mockCoupons);
+  const { coupons, createCoupon, updateCoupon, deleteCoupon } = useCoupon();
   const [emailCampaigns, setEmailCampaigns] = useState<EmailCampaign[]>(mockEmailCampaigns);
   const [seoSettings, setSeoSettings] = useState<SEOSettings>(defaultSEO);
   const [searchTerm, setSearchTerm] = useState("");
   const [isCouponDialogOpen, setIsCouponDialogOpen] = useState(false);
   const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
+  const { toast } = useToast();
   const [couponForm, setCouponForm] = useState({
     code: "",
-    type: "percent" as "percent" | "fixed",
-    value: "",
-    minOrder: "",
-    maxDiscount: "",
-    usageLimit: "",
-    startDate: "",
-    endDate: "",
-  });
-  const { toast } = useToast();
+  type: "percent",
+  value: "",
+  minOrder: "",
+  usageLimit: "",
+  startDate: "",
+  endDate: "",
+});
 
   const filteredCoupons = coupons.filter((coupon) =>
     coupon.code.toLowerCase().includes(searchTerm.toLowerCase())
@@ -209,11 +167,10 @@ const MarketingManagement = () => {
         code: coupon.code,
         type: coupon.type,
         value: coupon.value.toString(),
-        minOrder: coupon.minOrder.toString(),
-        maxDiscount: coupon.maxDiscount.toString(),
-        usageLimit: coupon.usageLimit.toString(),
-        startDate: coupon.startDate,
-        endDate: coupon.endDate,
+        minOrder: coupon.min_order_amount.toString(),
+        usageLimit: coupon.usage_limit.toString(),
+        startDate: coupon.start_date,
+        endDate: coupon.end_date,
       });
       setEditingCoupon(coupon);
     } else {
@@ -222,7 +179,6 @@ const MarketingManagement = () => {
         type: "percent",
         value: "",
         minOrder: "",
-        maxDiscount: "",
         usageLimit: "",
         startDate: "",
         endDate: "",
@@ -232,59 +188,38 @@ const MarketingManagement = () => {
     setIsCouponDialogOpen(true);
   };
 
-  const handleSubmitCoupon = (e: React.FormEvent) => {
+  const handleSubmitCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!couponForm.code || !couponForm.value) {
+
+    const payload = {
+      code: couponForm.code,
+      type: couponForm.type,
+      value: Number(couponForm.value),
+      min_order_amount: Number(couponForm.minOrder) || 0,
+      usage_limit: Number(couponForm.usageLimit) || 0,
+      start_date: couponForm.startDate,
+      end_date: couponForm.endDate,
+    };
+
+    try {
+      if (editingCoupon) {
+        await updateCoupon(editingCoupon.id, payload);
+      } else {
+        await createCoupon(payload);
+      }
+
+      setIsCouponDialogOpen(false);
+    } catch (err) {
       toast({
         title: "Lỗi",
-        description: "Vui lòng điền đầy đủ thông tin",
+        description: "Không thể lưu mã giảm giá",
         variant: "destructive",
       });
-      return;
     }
-
-    if (editingCoupon) {
-      setCoupons((prev) =>
-        prev.map((c) =>
-          c.id === editingCoupon.id
-            ? {
-                ...c,
-                code: couponForm.code,
-                type: couponForm.type,
-                value: parseInt(couponForm.value),
-                minOrder: parseInt(couponForm.minOrder) || 0,
-                maxDiscount: parseInt(couponForm.maxDiscount) || 0,
-                usageLimit: parseInt(couponForm.usageLimit) || 0,
-                startDate: couponForm.startDate,
-                endDate: couponForm.endDate,
-              }
-            : c
-        )
-      );
-      toast({ title: "Thành công", description: "Cập nhật mã giảm giá thành công" });
-    } else {
-      const newCoupon: Coupon = {
-        id: `CPN-${Date.now()}`,
-        code: couponForm.code.toUpperCase(),
-        type: couponForm.type,
-        value: parseInt(couponForm.value),
-        minOrder: parseInt(couponForm.minOrder) || 0,
-        maxDiscount: parseInt(couponForm.maxDiscount) || 0,
-        usageLimit: parseInt(couponForm.usageLimit) || 0,
-        usageCount: 0,
-        status: "active",
-        startDate: couponForm.startDate,
-        endDate: couponForm.endDate,
-      };
-      setCoupons((prev) => [newCoupon, ...prev]);
-      toast({ title: "Thành công", description: "Tạo mã giảm giá mới thành công" });
-    }
-    setIsCouponDialogOpen(false);
   };
 
-  const handleDeleteCoupon = (id: string) => {
-    setCoupons((prev) => prev.filter((c) => c.id !== id));
-    toast({ title: "Đã xóa", description: "Mã giảm giá đã được xóa" });
+  const handleDeleteCoupon = async (id: number) => {
+    await deleteCoupon(id);
   };
 
   const handleCopyCode = (code: string) => {
@@ -297,10 +232,19 @@ const MarketingManagement = () => {
   };
 
   const stats = {
-    activeCoupons: coupons.filter((c) => c.status === "active").length,
-    totalSaved: coupons.reduce((sum, c) => sum + (c.usageCount * (c.type === "percent" ? c.maxDiscount : c.value)), 0),
-    emailsSent: emailCampaigns.filter((e) => e.status === "sent").reduce((sum, e) => sum + e.recipients, 0),
+    activeCoupons: coupons.filter(c => c.is_active).length,
+    totalSaved: coupons.reduce(
+      (sum, c) =>
+        sum +
+        c.used_count *
+        (c.type === "percent" ? (c.value / 100) * c.min_order_amount : c.value),
+      0
+    ),
+    emailsSent: emailCampaigns
+      .filter(e => e.status === "sent")
+      .reduce((sum, e) => sum + e.recipients, 0),
   };
+
 
   return (
     <div className="space-y-6">
@@ -397,7 +341,8 @@ const MarketingManagement = () => {
                   <tbody>
                     <AnimatePresence>
                       {filteredCoupons.map((coupon) => {
-                        const StatusIcon = statusConfig[coupon.status].icon;
+                        const status = coupon.is_active ? "active" : "disabled";
+                        const StatusIcon = statusConfig[status].icon;
                         return (
                           <motion.tr
                             key={coupon.id}
@@ -422,30 +367,34 @@ const MarketingManagement = () => {
                               </div>
                             </td>
                             <td className="py-3 px-4 text-sm font-medium">
-                              {coupon.type === "percent" ? (
-                                <span className="flex items-center gap-1">
-                                  <Percent className="h-3 w-3" />
-                                  {coupon.value}%
-                                </span>
-                              ) : (
-                                formatPrice(coupon.value)
-                              )}
+                              {coupon.type === "percent"
+                                ? `${coupon.value}%`
+                                : formatPrice(coupon.value)}
                             </td>
-                            <td className="py-3 px-4 text-sm">{formatPrice(coupon.minOrder)}</td>
                             <td className="py-3 px-4 text-sm">
-                              {coupon.usageCount}/{coupon.usageLimit}
+                              {formatPrice(coupon.min_order_amount)}
                             </td>
+
+                            <td className="py-3 px-4 text-sm">
+                              {coupon.used_count}/{coupon.usage_limit}
+                            </td>
+
                             <td className="py-3 px-4">
                               <span
-                                className={`inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-full ${statusConfig[coupon.status].color}`}
+                                className={`inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-full ${coupon.is_active
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : "bg-muted text-muted-foreground"
+                                  }`}
                               >
                                 <StatusIcon className="h-3 w-3" />
-                                {statusConfig[coupon.status].label}
+                                {coupon.is_active ? "Hoạt động" : "Vô hiệu"}
                               </span>
                             </td>
+
                             <td className="py-3 px-4 text-sm text-muted-foreground">
-                              {coupon.startDate} - {coupon.endDate}
+                              {coupon.start_date} - {coupon.end_date}
                             </td>
+
                             <td className="py-3 px-4 text-right">
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -788,16 +737,7 @@ const MarketingManagement = () => {
                   placeholder="1000000"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="maxDiscount">Giảm tối đa</Label>
-                <Input
-                  id="maxDiscount"
-                  type="number"
-                  value={couponForm.maxDiscount}
-                  onChange={(e) => setCouponForm({ ...couponForm, maxDiscount: e.target.value })}
-                  placeholder="500000"
-                />
-              </div>
+          
             </div>
             <div className="space-y-2">
               <Label htmlFor="usageLimit">Số lượt sử dụng</Label>

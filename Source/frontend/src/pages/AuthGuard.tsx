@@ -5,7 +5,7 @@ export default function AdminGuard({ children }: { children: JSX.Element }) {
   const { user } = useAuth();
 
   if (!user) return <Navigate to="/auth" replace />;
-  if (user.role !== "admin") return <Navigate to="/" replace />;
+  if (user.role !== "admin" && user.role !== "saler") return <Navigate to="/" replace />;
 
   return children;
 }
