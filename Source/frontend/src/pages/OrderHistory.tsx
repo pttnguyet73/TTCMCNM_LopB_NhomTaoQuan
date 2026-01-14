@@ -112,20 +112,18 @@ const OrderHistory = () => {
         const list = Array.isArray(payload) ? payload : (payload?.data ?? payload?.data ?? payload);
         const ordersList = Array.isArray(list) ? list : (payload?.data ?? []);
 
-        const full = await Promise.all((ordersList as any[]).map(async (o: any) => {
-          const detailRes = await orderAPI.getOrderDetailPublic(o.raw_id ?? o.rawId ?? o.rawId ?? o.id?.replace(/[^0-9]/g, ''));
-          const detail = detailRes && detailRes.data ? detailRes.data : detailRes;
-          const itemsRaw = detail?.items ?? [];
+        const full = (ordersList as any[]).map((o: any) => {
+          const itemsRaw = o.items ?? [];
           const items: OrderItem[] = (itemsRaw as any[]).map((it: any, idx: number) => ({
             id: String(it.product_id ?? idx),
             product_id: it.product_id,
             name: it.name,
             image: it.image ?? it.product_image,
             quantity: Number(it.quantity) || 0,
-            price: parsePrice(it.price_raw ?? it.price ?? it.price_raw),
+            price: parsePrice(it.price_raw ?? it.price_raw ?? it.price ?? it.subtotal_raw ?? it.subtotal),
           }));
 
-          const total = parsePrice(o.total_raw ?? o.total_amount ?? o.total_raw ?? o.total_amount);
+          const total = parsePrice(o.total_raw ?? o.total_amount ?? o.total_raw ?? o.total_amount ?? o.total_amount);
 
           return {
             id: o.id,
@@ -137,11 +135,14 @@ const OrderHistory = () => {
             total,
             status: mapStatusKey(o.status_key ?? o.status),
           } as Order;
-        }));
+        });
 
         setOrders(full);
       } catch (err) {
         console.error('Error loading orders', err);
+        // more detailed server response for debugging
+        // eslint-disable-next-line no-console
+        console.error('Error response data:', (err as any)?.response?.data);
       } finally {
         setLoading(false);
       }
@@ -213,13 +214,13 @@ const OrderHistory = () => {
               </CardContent>
             </Card>
           ) : (
-            filteredOrders.map((order) => {
+            filteredOrders.map((order, orderIdx) => {
               const statusConfig = getStatusConfig(order.status);
               const StatusIcon = statusConfig.icon;
 
               return (
                 <motion.div
-                  key={order.id}
+                  key={`${order.raw_id ?? order.id}-${orderIdx}`}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   layout
@@ -251,7 +252,7 @@ const OrderHistory = () => {
                       {/* Order Items */}
                       <div className="space-y-3">
                         {order.items.map((item, index) => (
-                          <div key={item.id}>
+                          <div key={`${order.raw_id ?? order.id}-${item.id ?? index}`}>
                             <div className="flex gap-4">
                               <div className="w-20 h-20 rounded-lg overflow-hidden bg-muted flex-shrink-0">
                                 <img

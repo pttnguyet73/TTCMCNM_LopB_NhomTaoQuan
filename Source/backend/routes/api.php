@@ -140,10 +140,16 @@ Route::put('/cart-items/{id}', [App\Http\Controllers\CartItemController::class, 
 Route::delete('/cart-items/{id}', [App\Http\Controllers\CartItemController::class, 'destroy']);
 
 Route::post('/orders', [App\Http\Controllers\OrderController::class, 'store']);
-Route::get('/orders/{id}', [App\Http\Controllers\OrderController::class, 'show']);
-Route::put('/orders/{id}', [App\Http\Controllers\OrderController::class, 'update']);
-Route::delete('/orders/{id}', [App\Http\Controllers\OrderController::class, 'destroy']);
+Route::get('/orders/{id}', [App\Http\Controllers\OrderController::class, 'show'])->where('id', '[0-9]+');
+Route::put('/orders/{id}', [App\Http\Controllers\OrderController::class, 'update'])->where('id', '[0-9]+');
+Route::delete('/orders/{id}', [App\Http\Controllers\OrderController::class, 'destroy'])->where('id', '[0-9]+');
 Route::get('/orders', [App\Http\Controllers\OrderController::class, 'index']);
+
+// Routes for authenticated users to access their own orders
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/orders/me', [App\Http\Controllers\OrderController::class, 'userOrders']);
+    Route::get('/orders/me/{id}', [App\Http\Controllers\OrderController::class, 'showForUser']);
+});
 
 Route::post('/addresses', [App\Http\Controllers\AddressController::class, 'store']);
 Route::get('/addresses/{id}', [App\Http\Controllers\AddressController::class, 'show']);

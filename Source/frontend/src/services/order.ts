@@ -6,12 +6,12 @@ export const orderAPI = {
     return response.data;
   },
   getUserOrders: async () => {
-    const response = await api.get('/orders');
+    const response = await api.get('/orders/me');
     return response.data;
   },
 
   getOrderDetailPublic: async (id: number) => {
-    const response = await api.get(`/orders/${id}`);
+    const response = await api.get(`/orders/me/${id}`);
     return response.data;
   },
 
