@@ -1,49 +1,54 @@
 <?php
 
 namespace App\Http\Controllers;
+use App\Models\ProductColor;
+use App\Http\Requests\ProductColorRequest;
 
-use Illuminate\Http\Request;
-use App\Models\ProductSpec;
-use App\Http\Requests\ProductSpecRequest;
-
-
-class ProductSpecController extends Controller
+class productColorController extends Controller
 {
     //
     public function index()
     {
-        $specs = ProductSpec::all();
-        return response()->json($specs);
+        $colors = ProductColor::all();
+        return response()->json($colors);
     }
 
-    public function store(ProductSpecRequest $request)
+    public function store(ProductColorRequest $request)
     {
         $validated = $request->validated();
 
-        $spec = ProductSpec::create($validated);
-        return response()->json($spec, 201);
+        $color = ProductColor::create($validated);
+        return response()->json($color, 201);
     }
 
+    /**
+     * Display the specified resource.
+     */
     public function show($id)
     {
-        $spec = ProductSpec::findOrFail($id);
-        return response()->json($spec);
+        $color = ProductColor::findOrFail($id);
+        return response()->json($color);
     }
 
-    public function update(ProductSpecRequest $request, $id)
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(ProductColorRequest $request, $id)
     {
-        $spec = ProductSpec::findOrFail($id);
+        $color = ProductColor::findOrFail($id);
         $validated = $request->validated();
 
-        $spec->update($validated);
-        return response()->json($spec);
+        $color->update($validated);
+        return response()->json($color);
     }
 
+    /**
+     * Remove the specified resource from storage.
+     */
     public function destroy($id)
     {
-        $spec = ProductSpec::findOrFail($id);
-        $spec->delete();
-        return response()->json(['message' => 'Xóa thông số sản phẩm thành công']);
+        $color = ProductColor::findOrFail($id);
+        $color->delete();
+        return response()->json(['message' => 'Xóa màu sản phẩm thành công']);
     }
-
 }

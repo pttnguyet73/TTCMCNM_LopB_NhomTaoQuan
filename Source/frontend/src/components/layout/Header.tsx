@@ -73,8 +73,8 @@ const mapApiToLocalProduct = (apiProduct: ApiProduct): LocalProduct => {
 
   const colors =
     apiProduct.colors?.map((color) => ({
-      name: color.name || 'Default',
-      hex: color.hex || '#000000',
+      name: color.color_name || 'Default',
+      hex: color.color_code || '#000000',
     })) || [];
 
   const specs: { label: string; value: string }[] = [];
@@ -266,24 +266,6 @@ export function Header() {
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-1">
-              {navLinks.map((link) => {
-                const isActive = isLinkActive(link.path, location.pathname, location.search);
-                return (
-                  <Link
-                    key={link.path}
-                    to={link.path}
-                    className={cn(
-                      'flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full transition-all duration-300',
-                      isActive
-                        ? 'bg-secondary text-foreground'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50',
-                    )}
-                  >
-                    {link.icon && <link.icon className="w-4 h-4" />}
-                    {link.label}
-                  </Link>
-                );
-              })}
               {navLinks.map((link) => (
                 <Link
                   key={link.path}
@@ -368,7 +350,7 @@ export function Header() {
                       onClick={logout}
                       className="text-destructive focus:text-destructive"
                     >
-                      Đăng xuất
+                      <Link to="/">Đăng xuất</Link>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>

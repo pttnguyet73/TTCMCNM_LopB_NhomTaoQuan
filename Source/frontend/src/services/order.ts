@@ -6,9 +6,16 @@ export const orderAPI = {
     return response.data;
   },
   getUserOrders: async () => {
-    const response = await api.get('/orders');
-    return response.data;
-  },
+  const token = localStorage.getItem("token");
+
+  const response = await api.get('/my-orders', {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return response.data;
+},
 
   getOrderDetailPublic: async (id: number) => {
     const response = await api.get(`/orders/${id}`);

@@ -24,6 +24,7 @@ import { products, formatPrice, type Product } from '@/data/products';
 import { useCart } from '@/contexts/CartContext';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { ProductColor, ProductImage } from '@/types/products';
 
 interface Review {
   id: string;
@@ -39,16 +40,15 @@ export default function ProductDetailPage() {
   const { addToCart } = useCart();
   const navigate = useNavigate();
 
-  const product = products.find((p) => p.id === id);
+  const product = products.find((p) => p.id === Number(id));
 
   const [reviews, setReviews] = useState<Review[]>([]);
-  const [selectedImage, setSelectedImage] = useState(0);
-  const [selectedColor, setSelectedColor] = useState(product?.colors[0]?.name || '');
+  const [selectedImage, setSelectedImage] = useState<ProductImage[]>([]);
+  const [selectedColor, setSelectedColor] = useState<ProductColor | null>(null);
   const [selectedStorage, setSelectedStorage] = useState(product?.storage[0] || '');
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('specs');
 
-  // ✅ Fix lỗi API: Thêm encodeURIComponent để xử lý ký tự đặc biệt
   useEffect(() => {
     if (!product) return;
 
@@ -84,17 +84,39 @@ export default function ProductDetailPage() {
     .filter((p) => p.category === product.category && p.id !== product.id)
     .slice(0, 4);
 
-  // ✅ Không cần chuyển đổi vì giờ cả Product và CartItemProduct đều có id là string
   const handleAddToCart = () => {
-    // Type cast: Product phù hợp với CartItemProduct
-    addToCart(product, selectedColor, selectedStorage, quantity);
+    if (!product) {
+      toast.error('Không tìm thấy sản phẩm');
+      return;
+    }
+
+    if (!selectedColor) {
+      toast.error('Vui lòng chọn màu');
+      return;
+    }
+
+    addToCart(
+      product.id,
+      selectedColor.id,
+      quantity
+    );
+
     toast.success(`Đã thêm ${product.name} vào giỏ hàng`);
   };
 
+
   const handleBuyNow = () => {
-    addToCart(product, selectedColor, selectedStorage, quantity);
+    if (!product || !selectedColor) return;
+
+    addToCart(
+      product.id,
+      selectedColor.id,
+      quantity
+    );
+
     navigate('/checkout');
   };
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -238,16 +260,20 @@ export default function ProductDetailPage() {
               {/* Colors */}
               <div className="mb-6">
                 <h3 className="text-sm font-medium text-foreground mb-3">
-                  Màu sắc: <span className="text-muted-foreground">{selectedColor}</span>
+                  Màu sắc:{' '}
+                  <span className="text-muted-foreground">
+                    {selectedColor?.color_name || 'Chưa chọn'}
+                  </span>
                 </h3>
+
                 <div className="flex items-center gap-3">
                   {product.colors.map((color) => (
                     <button
                       key={color.name}
-                      onClick={() => setSelectedColor(color.name)}
+                      onClick={() => setSelectedColor(color)}
                       className={cn(
                         'w-10 h-10 rounded-full border-2 transition-all flex items-center justify-center',
-                        selectedColor === color.name
+                        selectedColor === color
                           ? 'border-accent scale-110'
                           : 'border-transparent hover:border-border',
                       )}

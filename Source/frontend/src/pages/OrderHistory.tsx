@@ -113,7 +113,8 @@ const OrderHistory = () => {
         const ordersList = Array.isArray(list) ? list : (payload?.data ?? []);
 
         const full = await Promise.all((ordersList as any[]).map(async (o: any) => {
-          const detailRes = await orderAPI.getOrderDetailPublic(o.raw_id ?? o.rawId ?? o.rawId ?? o.id?.replace(/[^0-9]/g, ''));
+          const detailRes = await orderAPI.getOrderDetailPublic(o.raw_id ?? o.rawId ?? o.rawId ?? String(o.id).replace(/[^0-9]/g, '')
+);
           const detail = detailRes && detailRes.data ? detailRes.data : detailRes;
           const itemsRaw = detail?.items ?? [];
           const items: OrderItem[] = (itemsRaw as any[]).map((it: any, idx: number) => ({
