@@ -19,13 +19,20 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('product-colors')->group(fu
     Route::put('/{id}', [App\Http\Controllers\productColorController::class, 'update']);
     Route::delete('/{id}', [App\Http\Controllers\productColorController::class, 'destroy']);
 });
-Route::middleware(['auth:sanctum', 'admin'])->prefix('product-specs')->group(function () {
-    Route::get('/', [App\Http\Controllers\ProductSpecController::class, 'index']);
-    Route::post('/', [App\Http\Controllers\ProductSpecController::class, 'store']);
-    Route::get('/{id}', [App\Http\Controllers\ProductSpecController::class, 'show']);
-    Route::put('/{id}', [App\Http\Controllers\ProductSpecController::class, 'update']);
-    Route::delete('/{id}', [App\Http\Controllers\ProductSpecController::class, 'destroy']);
-});
+
+
+Route::middleware(['auth:sanctum', 'admin'])
+    ->prefix('product-specs')
+    ->group(function () {
+        Route::get('/', [App\Http\Controllers\ProductSpecController::class, 'index']);
+        Route::post('/', [App\Http\Controllers\ProductSpecController::class, 'store']);
+        Route::get('/{id}', [App\Http\Controllers\ProductSpecController::class, 'show']);
+        Route::put('/{id}', [App\Http\Controllers\ProductSpecController::class, 'update']);
+        Route::delete('/{id}', [App\Http\Controllers\ProductSpecController::class, 'destroy']);
+    });
+
+Route::get('product-specs/product/{productId}', [App\Http\Controllers\ProductSpecController::class, 'getByProductId']);
+Route::get('product-specs/by-product', [App\Http\Controllers\ProductSpecController::class, 'getByProduct']);
 
 Route::middleware(['auth:sanctum', 'admin'])->prefix('product-images')->group(function () {
     Route::get('/', [App\Http\Controllers\ProductImageController::class, 'index']);
@@ -44,7 +51,6 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('product-storages')->group(
     Route::delete('/{id}', [App\Http\Controllers\ProductStorageController::class, 'destroy']);
 });
 
-// Public routes (không cần đăng nhập)
 Route::prefix('categories')->group(function () {
     Route::get('/', [App\Http\Controllers\CategoryController::class, 'index']);
     Route::get('/{id}', [App\Http\Controllers\CategoryController::class, 'show']);
@@ -55,7 +61,6 @@ Route::prefix('products')->group(function () {
     Route::get('/{id}', [ProductController::class, 'show']);
 });
 
-// Protected routes (cần đăng nhập admin)
 Route::middleware(['auth:sanctum', 'admin'])->prefix('categories')->group(function () {
     Route::get('/', [App\Http\Controllers\CategoryController::class, 'index']);
     Route::post('/', [App\Http\Controllers\CategoryController::class, 'store']);
@@ -136,14 +141,6 @@ Route::middleware(['auth:sanctum'])->prefix('admin')->group(function () {
     Route::get('/order', [AdminOrderController::class, 'index']);
 });
 
-
-// Route::get('/test/db', function () {
-//     return [
-//         'db' => DB::getDatabaseName(),
-//         'orders' => DB::table('orders')->count(),
-//         'users' => DB::table('users')->count(),
-//     ];
-// });
 
 Route::get('/admin/customers/export', [CustomerExportController::class, 'export']);
 

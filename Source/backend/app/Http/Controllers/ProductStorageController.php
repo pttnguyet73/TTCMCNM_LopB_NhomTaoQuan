@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
+
 use App\Models\ProductStorage;
 use App\Http\Requests\ProductStorageRequest;
 

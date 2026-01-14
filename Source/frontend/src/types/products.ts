@@ -1,5 +1,3 @@
-// src/types/product.ts
-
 export interface Category {
   id: number;
   name: string;
@@ -17,15 +15,14 @@ export interface ProductImage {
   updated_at?: string;
 }
 
-// ✅ Đồng bộ cả 2 format colors
 export interface ProductColor {
   id: number;
   product_id: number;
   color_name: string;
   color_code?: string;
-  hex_code?: string; // ✅ Thêm hex_code cho frontend
-  name?: string; // ✅ Thêm name cho frontend
-  hex?: string; // ✅ Thêm hex cho frontend
+  hex_code?: string;
+  name?: string;
+  hex?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -54,7 +51,7 @@ export interface Product {
     id: number;
     name: string;
     hex_code?: string;
-    hex?: string; // ✅ Thêm hex cho compatibility
+    hex?: string;
   }>;
   storage_options?: string[];
   specifications?: Record<string, string>;
@@ -62,7 +59,6 @@ export interface Product {
   updated_at?: string;
 }
 
-// For API payload
 export interface ProductPayload {
   name: string;
   description?: string;
@@ -72,7 +68,6 @@ export interface ProductPayload {
   category_id: number;
 }
 
-// For ProductCard - đồng bộ với Product hiện tại
 export interface ProductCardItem {
   id: number;
   name: string;
@@ -83,10 +78,10 @@ export interface ProductCardItem {
   reviews?: number;
   category?: string;
   colors?: Array<{
-    id?: number; // ✅ Optional
+    id?: number;
     name: string;
     hex_code?: string;
-    hex?: string; // ✅ Thêm hex cho compatibility
+    hex?: string;
   }>;
   storage?: string[];
   inStock?: boolean;
@@ -95,7 +90,6 @@ export interface ProductCardItem {
   isFeatured?: boolean;
 }
 
-// For Cart - hỗ trợ cả 2 format colors
 export interface CartItemProduct {
   id: number;
   name: string;
@@ -106,7 +100,7 @@ export interface CartItemProduct {
     id?: number;
     name: string;
     hex_code?: string;
-    hex?: string; // ✅ Thêm hex cho compatibility
+    hex?: string;
   }>;
   storage?: string[];
   category?: string;

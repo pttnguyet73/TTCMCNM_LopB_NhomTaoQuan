@@ -48,7 +48,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return updated;
       }
 
-      // ✅ Tạo unique ID cho CartItem (kết hợp productId, color và storage)
       const cartItemId = `${product.id}-${color}-${storage}`;
 
       const newItem: CartItem = {

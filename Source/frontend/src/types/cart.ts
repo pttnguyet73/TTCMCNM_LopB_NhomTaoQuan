@@ -1,4 +1,3 @@
-// src/types/cart.ts
 export interface CartProduct {
   id: number;
   name: string;
@@ -14,5 +13,5 @@ export interface CartProduct {
   isNew?: boolean;
   isFeatured?: boolean;
   description?: string;
-  [key: string]: any; // Cho phép thêm các trường khác
+  [key: string]: any;
 }

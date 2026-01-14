@@ -97,7 +97,6 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Hàm chuyển đổi từ API response sang ProductCardItem
   const convertToProductCardItem = (product: any): ProductCardItem => {
     return {
       id: product.id,
@@ -122,7 +121,6 @@ export default function HomePage() {
     };
   };
 
-  // Fetch products từ API
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -140,7 +138,6 @@ export default function HomePage() {
     fetchProducts();
   }, []);
 
-  // Hiển thị loading
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -154,7 +151,6 @@ export default function HomePage() {
     );
   }
 
-  // Hiển thị lỗi
   if (error) {
     return (
       <div className="min-h-screen bg-background">
@@ -171,10 +167,8 @@ export default function HomePage() {
     );
   }
 
-  // Lấy 4 sản phẩm nổi bật đầu tiên
   const featuredProducts = products.filter((p) => p.isFeatured).slice(0, 4);
 
-  // Lấy 4 sản phẩm mới đầu tiên
   const newProducts = products.filter((p) => p.isNew).slice(0, 4);
 
   const nextSlide = () => {

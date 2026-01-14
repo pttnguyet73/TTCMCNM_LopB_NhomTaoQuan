@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import axios from 'axios';
+import api from '@/lib/api';
 import {
   Star,
   ShoppingBag,
@@ -26,6 +26,32 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { CartItemProduct } from '@/types/products';
 
+interface ApiReview {
+  id: number;
+  product_id: number;
+  user_id: number;
+  rating: number;
+  comment: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  user?: {
+    id: number;
+    name: string;
+    email: string;
+    avatar?: string;
+  };
+}
+
+interface ApiSpecification {
+  id: number;
+  product_id: number;
+  label: string;
+  value: string;
+  created_at: string;
+  updated_at: string;
+}
+
 interface Review {
   id: string;
   author: string;
@@ -33,6 +59,11 @@ interface Review {
   date: string;
   rating: number;
   content: string;
+}
+
+interface Specification {
+  label: string;
+  value: string;
 }
 
 interface ApiProduct {
@@ -50,8 +81,7 @@ interface ApiProduct {
   images: Array<{ id: number; product_id: number; image_url: string; is_main: string }>;
   colors: Array<{ id: number; product_id: number; name: string; hex_code: string }>;
   category: { id: number; name: string; slug: string };
-  specifications?: Record<string, string>;
-  specs?: Array<{ label: string; value: string }>;
+  specifications?: ApiSpecification[];
   storage?: string[];
 }
 
@@ -64,6 +94,7 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [specifications, setSpecifications] = useState<Specification[]>([]);
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedColor, setSelectedColor] = useState('');
   const [selectedStorage, setSelectedStorage] = useState('');
@@ -71,22 +102,23 @@ export default function ProductDetailPage() {
   const [activeTab, setActiveTab] = useState('specs');
   const [relatedProducts, setRelatedProducts] = useState<CartItemProduct[]>([]);
   const [loadingRelated, setLoadingRelated] = useState(false);
+  const [loadingReviews, setLoadingReviews] = useState(false);
+  const [loadingSpecs, setLoadingSpecs] = useState(false);
+  const [showAllReviews, setShowAllReviews] = useState(false);
+  const [visibleReviewCount, setVisibleReviewCount] = useState(3);
 
-  // Fetch product từ API
   useEffect(() => {
     const fetchProduct = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        const response = await axios.get(`http://localhost:8000/api/products/${id}`);
+        const response = await api.get(`products/${id}`);
 
-        // Kiểm tra cấu trúc dữ liệu trả về
         if (!response.data || typeof response.data !== 'object') {
           throw new Error('Dữ liệu sản phẩm không hợp lệ');
         }
 
-        // API trả về { success: true, data: {...} }
         const responseData = response.data;
         console.log('Full API response:', responseData);
 
@@ -97,7 +129,6 @@ export default function ProductDetailPage() {
         const productData = responseData.data;
         console.log('Product data from API:', productData);
 
-        // Chuẩn hóa dữ liệu product với giá trị mặc định
         const normalizedProduct: ApiProduct = {
           id: productData.id,
           category_id: productData.category_id,
@@ -111,15 +142,7 @@ export default function ProductDetailPage() {
           rating: productData.rating || 0,
           review_count: productData.review_count || 0,
           storage: productData.storage || ['128GB', '256GB', '512GB'],
-          specs: productData.specifications ||
-            productData.specs || [
-              { label: 'Màn hình', value: 'Retina Display' },
-              { label: 'Chip', value: 'Apple Silicon' },
-              { label: 'RAM', value: '8GB' },
-              { label: 'Bộ nhớ', value: '256GB' },
-              { label: 'Hệ điều hành', value: 'iOS/iPadOS/macOS' },
-              { label: 'Pin', value: 'Cả ngày sử dụng' },
-            ],
+          specifications: productData.specifications || [],
           colors: productData.colors || [],
           images: productData.images || [],
           category: productData.category || { id: 0, name: 'Uncategorized', slug: 'uncategorized' },
@@ -127,12 +150,10 @@ export default function ProductDetailPage() {
 
         setProduct(normalizedProduct);
 
-        // Chọn màu đầu tiên nếu có
         if (normalizedProduct.colors && normalizedProduct.colors.length > 0) {
           setSelectedColor(normalizedProduct.colors[0].name);
         }
 
-        // Chọn storage đầu tiên
         if (normalizedProduct.storage && normalizedProduct.storage.length > 0) {
           setSelectedStorage(normalizedProduct.storage[0]);
         }
@@ -152,36 +173,283 @@ export default function ProductDetailPage() {
     }
   }, [id]);
 
-  // Fetch reviews từ API
   useEffect(() => {
     if (!product?.id) return;
 
-    axios
-      .get(`http://localhost:8000/api/reviews`, {
-        params: { product_id: product.id },
-      })
-      .then((res) => {
-        // Kiểm tra cấu trúc response
-        if (res.data && res.data.data) {
-          setReviews(res.data.data || []);
-        } else {
-          setReviews(res.data || []);
-        }
-      })
-      .catch((err) => {
-        console.error('Lỗi khi lấy review:', err);
-        setReviews([]);
-      });
-  }, [product]);
+    const fetchSpecifications = async () => {
+      try {
+        setLoadingSpecs(true);
+        console.log('Fetching specs for product ID:', product.id);
 
-  // Fetch related products từ API
+        const response = await api.get(`product-specs/product/${product.id}`);
+        console.log('Specs API response:', response.data);
+
+        let specsData: ApiSpecification[] = [];
+
+        if (response.data && Array.isArray(response.data)) {
+          specsData = response.data;
+        } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
+          specsData = response.data.data;
+        } else if (response.data && response.data.success && Array.isArray(response.data.data)) {
+          specsData = response.data.data;
+        }
+
+        console.log('Processed specs data:', specsData);
+
+        if (specsData.length > 0) {
+          const formattedSpecs: Specification[] = specsData.map((spec: ApiSpecification) => ({
+            label: spec.label,
+            value: spec.value,
+          }));
+          setSpecifications(formattedSpecs);
+        } else {
+          try {
+            const response2 = await api.get(`product-specs/by-product`, {
+              params: { product_id: product.id },
+            });
+            console.log('Alternative specs API response:', response2.data);
+
+            let specsData2: ApiSpecification[] = [];
+
+            if (response2.data && Array.isArray(response2.data)) {
+              specsData2 = response2.data;
+            } else if (
+              response2.data &&
+              response2.data.data &&
+              Array.isArray(response2.data.data)
+            ) {
+              specsData2 = response2.data.data;
+            } else if (
+              response2.data &&
+              response2.data.success &&
+              Array.isArray(response2.data.data)
+            ) {
+              specsData2 = response2.data.data;
+            }
+
+            if (specsData2.length > 0) {
+              const formattedSpecs: Specification[] = specsData2.map((spec: ApiSpecification) => ({
+                label: spec.label,
+                value: spec.value,
+              }));
+              setSpecifications(formattedSpecs);
+            } else if (product.specifications && product.specifications.length > 0) {
+              const formattedSpecs: Specification[] = product.specifications.map(
+                (spec: ApiSpecification) => ({
+                  label: spec.label,
+                  value: spec.value,
+                }),
+              );
+              setSpecifications(formattedSpecs);
+            } else {
+              setSpecifications([
+                { label: 'Màn hình', value: 'Retina Display' },
+                { label: 'Chip', value: 'Apple Silicon' },
+                { label: 'RAM', value: '8GB' },
+                { label: 'Bộ nhớ', value: selectedStorage || '256GB' },
+                { label: 'Hệ điều hành', value: 'iOS/iPadOS/macOS' },
+                { label: 'Pin', value: 'Cả ngày sử dụng' },
+              ]);
+            }
+          } catch (fallbackErr) {
+            console.error('Lỗi khi lấy thông số kỹ thuật (fallback):', fallbackErr);
+            if (product.specifications && product.specifications.length > 0) {
+              const formattedSpecs: Specification[] = product.specifications.map(
+                (spec: ApiSpecification) => ({
+                  label: spec.label,
+                  value: spec.value,
+                }),
+              );
+              setSpecifications(formattedSpecs);
+            } else {
+              setSpecifications([
+                { label: 'Màn hình', value: 'Retina Display' },
+                { label: 'Chip', value: 'Apple Silicon' },
+                { label: 'RAM', value: '8GB' },
+                { label: 'Bộ nhớ', value: selectedStorage || '256GB' },
+                { label: 'Hệ điều hành', value: 'iOS/iPadOS/macOS' },
+                { label: 'Pin', value: 'Cả ngày sử dụng' },
+              ]);
+            }
+          }
+        }
+      } catch (err: any) {
+        console.error('Lỗi khi lấy thông số kỹ thuật (chính):', err);
+        try {
+          const response2 = await api.get(`product-specs/by-product`, {
+            params: { product_id: product.id },
+          });
+          console.log('Fallback specs API response:', response2.data);
+
+          let specsData2: ApiSpecification[] = [];
+
+          if (response2.data && Array.isArray(response2.data)) {
+            specsData2 = response2.data;
+          } else if (response2.data && response2.data.data && Array.isArray(response2.data.data)) {
+            specsData2 = response2.data.data;
+          } else if (
+            response2.data &&
+            response2.data.success &&
+            Array.isArray(response2.data.data)
+          ) {
+            specsData2 = response2.data.data;
+          }
+
+          if (specsData2.length > 0) {
+            const formattedSpecs: Specification[] = specsData2.map((spec: ApiSpecification) => ({
+              label: spec.label,
+              value: spec.value,
+            }));
+            setSpecifications(formattedSpecs);
+          } else if (product.specifications && product.specifications.length > 0) {
+            const formattedSpecs: Specification[] = product.specifications.map(
+              (spec: ApiSpecification) => ({
+                label: spec.label,
+                value: spec.value,
+              }),
+            );
+            setSpecifications(formattedSpecs);
+          } else {
+            setSpecifications([
+              { label: 'Màn hình', value: 'Retina Display' },
+              { label: 'Chip', value: 'Apple Silicon' },
+              { label: 'RAM', value: '8GB' },
+              { label: 'Bộ nhớ', value: selectedStorage || '256GB' },
+              { label: 'Hệ điều hành', value: 'iOS/iPadOS/macOS' },
+              { label: 'Pin', value: 'Cả ngày sử dụng' },
+            ]);
+          }
+        } catch (finalErr) {
+          console.error('Lỗi khi lấy thông số kỹ thuật (cuối cùng):', finalErr);
+          if (product.specifications && product.specifications.length > 0) {
+            const formattedSpecs: Specification[] = product.specifications.map(
+              (spec: ApiSpecification) => ({
+                label: spec.label,
+                value: spec.value,
+              }),
+            );
+            setSpecifications(formattedSpecs);
+          } else {
+            setSpecifications([
+              { label: 'Màn hình', value: 'Retina Display' },
+              { label: 'Chip', value: 'Apple Silicon' },
+              { label: 'RAM', value: '8GB' },
+              { label: 'Bộ nhớ', value: selectedStorage || '256GB' },
+              { label: 'Hệ điều hành', value: 'iOS/iPadOS/macOS' },
+              { label: 'Pin', value: 'Cả ngày sử dụng' },
+            ]);
+          }
+        }
+      } finally {
+        setLoadingSpecs(false);
+      }
+    };
+
+    fetchSpecifications();
+  }, [product?.id, product?.specifications, selectedStorage]);
+
+  useEffect(() => {
+    if (!product?.id) return;
+
+    const fetchReviews = async () => {
+      try {
+        setLoadingReviews(true);
+
+        const response = await api.get(`reviews/product/${product.id}`);
+
+        console.log('Reviews API response for product', product.id, ':', response.data);
+
+        let reviewsData: ApiReview[] = [];
+
+        if (response.data && Array.isArray(response.data)) {
+          reviewsData = response.data;
+        } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
+          reviewsData = response.data.data;
+        } else if (response.data && response.data.success && Array.isArray(response.data.data)) {
+          reviewsData = response.data.data;
+        }
+
+        const productReviews = reviewsData.filter(
+          (review: ApiReview) => review.product_id === product.id && review.status === 'approved',
+        );
+
+        console.log('Filtered reviews for product', product.id, ':', productReviews);
+
+        const formattedReviews: Review[] = productReviews.map((review: ApiReview) => {
+          const authorName = review.user?.name || `User ${review.user_id}`;
+          let avatarUrl = review.user?.avatar;
+          if (!avatarUrl && authorName) {
+            const encodedName = encodeURIComponent(authorName);
+            avatarUrl = `https://ui-avatars.com/api/?name=${encodedName}&background=random&color=fff&bold=true&size=128`;
+          }
+
+          return {
+            id: review.id.toString(),
+            author: authorName,
+            avatar: avatarUrl || '/placeholder-avatar.jpg',
+            date: new Date(review.created_at).toLocaleDateString('vi-VN'),
+            rating: review.rating,
+            content: review.comment,
+          };
+        });
+
+        setReviews(formattedReviews);
+      } catch (err: any) {
+        console.error('Lỗi khi lấy review:', err);
+
+        try {
+          const response = await api.get(`reviews`);
+
+          let allReviews: ApiReview[] = [];
+
+          if (response.data && Array.isArray(response.data)) {
+            allReviews = response.data;
+          } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
+            allReviews = response.data.data;
+          }
+
+          const productReviews = allReviews.filter(
+            (review: ApiReview) => review.product_id === product.id && review.status === 'approved',
+          );
+
+          const formattedReviews: Review[] = productReviews.map((review: ApiReview) => {
+            const authorName = review.user?.name || `User ${review.user_id}`;
+            let avatarUrl = review.user?.avatar;
+            if (!avatarUrl && authorName) {
+              const encodedName = encodeURIComponent(authorName);
+              avatarUrl = `https://ui-avatars.com/api/?name=${encodedName}&background=random&color=fff&bold=true&size=128`;
+            }
+
+            return {
+              id: review.id.toString(),
+              author: authorName,
+              avatar: avatarUrl || '/placeholder-avatar.jpg',
+              date: new Date(review.created_at).toLocaleDateString('vi-VN'),
+              rating: review.rating,
+              content: review.comment,
+            };
+          });
+
+          setReviews(formattedReviews);
+        } catch (fallbackErr) {
+          console.error('Lỗi khi lấy review (fallback):', fallbackErr);
+          setReviews([]);
+        }
+      } finally {
+        setLoadingReviews(false);
+      }
+    };
+
+    fetchReviews();
+  }, [product?.id]);
+
   useEffect(() => {
     if (!product?.category_id) return;
 
     const fetchRelatedProducts = async () => {
       try {
         setLoadingRelated(true);
-        const response = await axios.get(`http://localhost:8000/api/products`, {
+        const response = await api.get(`products`, {
           params: {
             category_id: product.category_id,
             exclude_id: product.id,
@@ -189,11 +457,9 @@ export default function ProductDetailPage() {
           },
         });
 
-        // Kiểm tra cấu trúc response
         const responseData = response.data;
         const relatedData = responseData.data || responseData || [];
 
-        // Chuyển đổi dữ liệu từ API sang CartItemProduct
         const convertedProducts: CartItemProduct[] = relatedData.map((item: any) => {
           const images = item.images || [];
           const imageUrls = images
@@ -223,7 +489,7 @@ export default function ProductDetailPage() {
           };
         });
 
-        setRelatedProducts(convertedProducts);
+        setRelatedProducts(convertedProducts.slice(0, 4));
       } catch (err) {
         console.error('Lỗi khi lấy sản phẩm liên quan:', err);
         setRelatedProducts([]);
@@ -234,6 +500,16 @@ export default function ProductDetailPage() {
 
     fetchRelatedProducts();
   }, [product]);
+
+  const handleShowMoreReviews = () => {
+    if (showAllReviews) {
+      setShowAllReviews(false);
+    } else {
+      setShowAllReviews(true);
+    }
+  };
+
+  const displayedReviews = showAllReviews ? reviews : reviews.slice(0, visibleReviewCount);
 
   if (loading) {
     return (
@@ -266,22 +542,17 @@ export default function ProductDetailPage() {
     );
   }
 
-  // Lấy danh sách hình ảnh từ API
   const images = product.images || [];
   const imageUrls = images
     .map((img) => (typeof img === 'string' ? img : img.image_url || ''))
     .filter((url) => url);
 
-  // Thêm ảnh chính vào đầu nếu không có trong danh sách images
   const allImages = imageUrls.length > 0 ? imageUrls : ['/placeholder.jpg'];
-
-  // Lấy giá trị với fallback
   const productRating = product.rating || 0;
-  const reviewCount = product.review_count || 0;
+  const reviewCount = reviews.length;
   const inStock = product.status === 1;
   const categoryName = product.category?.name || 'Uncategorized';
 
-  // Chuyển đổi product từ API sang CartItemProduct
   const convertToCartItemProduct = (): CartItemProduct => {
     return {
       id: product.id,
@@ -324,7 +595,6 @@ export default function ProductDetailPage() {
 
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-4">
-          {/* Breadcrumb */}
           <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
             <Link to="/" className="hover:text-foreground">
               Trang chủ
@@ -344,9 +614,7 @@ export default function ProductDetailPage() {
             <span className="text-foreground">{product.name}</span>
           </nav>
 
-          {/* Product Info */}
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 mb-16">
-            {/* Images */}
             <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }}>
               <div className="relative aspect-square rounded-3xl overflow-hidden bg-secondary/30 mb-4">
                 <img
@@ -377,7 +645,6 @@ export default function ProductDetailPage() {
                 )}
               </div>
 
-              {/* Thumbnails */}
               {allImages.length > 1 && (
                 <div className="flex items-center gap-3">
                   {allImages.map((img, index) => (
@@ -405,9 +672,7 @@ export default function ProductDetailPage() {
               )}
             </motion.div>
 
-            {/* Info */}
             <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }}>
-              {/* Badges */}
               <div className="flex items-center gap-2 mb-4">
                 {product.is_new === 1 && (
                   <span className="px-3 py-1 text-xs font-medium bg-accent text-accent-foreground rounded-full">
@@ -434,7 +699,6 @@ export default function ProductDetailPage() {
                 {product.name}
               </h1>
 
-              {/* Rating */}
               <div className="flex items-center gap-4 mb-6">
                 <div className="flex items-center gap-1">
                   {[...Array(5)].map((_, i) => (
@@ -453,7 +717,6 @@ export default function ProductDetailPage() {
                 <span className="text-muted-foreground">({reviewCount} đánh giá)</span>
               </div>
 
-              {/* Price - SỬA LẠI ĐỂ HIỂN THỊ ĐÚNG GIÁ */}
               <div className="flex items-end gap-4 mb-8">
                 <span className="text-4xl font-bold text-foreground">
                   {product.price ? formatPrice(product.price) : 'Liên hệ'}
@@ -465,7 +728,6 @@ export default function ProductDetailPage() {
                 )}
               </div>
 
-              {/* Colors */}
               {product.colors && product.colors.length > 0 && (
                 <div className="mb-6">
                   <h3 className="text-sm font-medium text-foreground mb-3">
@@ -504,7 +766,6 @@ export default function ProductDetailPage() {
                 </div>
               )}
 
-              {/* Storage */}
               {product.storage && product.storage.length > 0 && (
                 <div className="mb-6">
                   <h3 className="text-sm font-medium text-foreground mb-3">Dung lượng</h3>
@@ -527,7 +788,6 @@ export default function ProductDetailPage() {
                 </div>
               )}
 
-              {/* Quantity */}
               <div className="mb-8">
                 <h3 className="text-sm font-medium text-foreground mb-3">Số lượng</h3>
                 <div className="inline-flex items-center gap-3 bg-secondary rounded-xl p-1">
@@ -551,7 +811,6 @@ export default function ProductDetailPage() {
                 </div>
               </div>
 
-              {/* Actions */}
               <div className="flex flex-col sm:flex-row gap-4 mb-8">
                 <Button
                   variant="hero"
@@ -574,7 +833,6 @@ export default function ProductDetailPage() {
                 </Button>
               </div>
 
-              {/* Quick Actions */}
               <div className="flex items-center gap-4 mb-8">
                 <button className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
                   <Heart className="w-5 h-5" />
@@ -586,7 +844,6 @@ export default function ProductDetailPage() {
                 </button>
               </div>
 
-              {/* Features */}
               <div className="grid grid-cols-3 gap-4 p-6 bg-secondary/50 rounded-2xl">
                 <div className="text-center">
                   <Truck className="w-6 h-6 mx-auto mb-2 text-accent" />
@@ -604,7 +861,6 @@ export default function ProductDetailPage() {
             </motion.div>
           </div>
 
-          {/* Tabs */}
           <div className="mb-16">
             <div className="flex items-center gap-2 border-b border-border mb-8 overflow-x-auto">
               {[
@@ -627,25 +883,38 @@ export default function ProductDetailPage() {
               ))}
             </div>
 
-            {/* Tab Content */}
             {activeTab === 'specs' && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="grid md:grid-cols-2 gap-4"
+                className="space-y-4"
               >
-                {product.specs &&
-                  product.specs.map((spec: any, index: number) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between p-4 bg-secondary/50 rounded-xl"
-                    >
-                      <span className="text-muted-foreground">
-                        {spec.label || `Thông số ${index + 1}`}
-                      </span>
-                      <span className="font-medium text-foreground">{spec.value || spec}</span>
-                    </div>
-                  ))}
+                {loadingSpecs ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto"></div>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      Đang tải thông số kỹ thuật...
+                    </p>
+                  </div>
+                ) : specifications.length > 0 ? (
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {specifications.map((spec, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-4 bg-secondary/50 rounded-xl"
+                      >
+                        <span className="text-muted-foreground">{spec.label}</span>
+                        <span className="font-medium text-foreground">{spec.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 bg-secondary/30 rounded-3xl">
+                    <p className="text-muted-foreground">
+                      Chưa có thông số kỹ thuật cho sản phẩm này
+                    </p>
+                  </div>
+                )}
               </motion.div>
             )}
 
@@ -655,7 +924,9 @@ export default function ProductDetailPage() {
                 animate={{ opacity: 1, y: 0 }}
                 className="prose prose-gray max-w-none"
               >
-                <p className="text-muted-foreground leading-relaxed">{product.description}</p>
+                <div className="text-muted-foreground leading-relaxed whitespace-pre-line">
+                  {product.description || 'Chưa có mô tả cho sản phẩm này'}
+                </div>
                 <p className="text-muted-foreground leading-relaxed mt-4">
                   Sản phẩm {product.name} được thiết kế và sản xuất bởi Apple Inc. với các công nghệ
                   tiên tiến nhất. Đây là sản phẩm chính hãng được phân phối tại Việt Nam bởi các đại
@@ -670,55 +941,74 @@ export default function ProductDetailPage() {
                 animate={{ opacity: 1, y: 0 }}
                 className="space-y-6"
               >
-                {reviews.length > 0 ? (
-                  reviews.map((review) => (
-                    <div key={review.id} className="p-6 bg-secondary/50 rounded-2xl">
-                      <div className="flex items-start gap-4">
-                        <img
-                          src={review.avatar}
-                          alt={review.author}
-                          className="w-12 h-12 rounded-full object-cover"
-                          onError={(e) => {
-                            e.currentTarget.src = '/placeholder-avatar.jpg';
-                          }}
-                        />
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between mb-2">
-                            <h4 className="font-semibold text-foreground">{review.author}</h4>
-                            <span className="text-sm text-muted-foreground">{review.date}</span>
+                {loadingReviews ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto"></div>
+                    <p className="mt-2 text-sm text-muted-foreground">Đang tải đánh giá...</p>
+                  </div>
+                ) : displayedReviews.length > 0 ? (
+                  <>
+                    {displayedReviews.map((review) => (
+                      <div key={review.id} className="p-6 bg-secondary/50 rounded-2xl">
+                        <div className="flex items-start gap-4">
+                          <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300 flex-shrink-0">
+                            <img
+                              src={review.avatar}
+                              alt={review.author}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                const name = review.author || 'User';
+                                e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                  name,
+                                )}&background=random&color=fff&bold=true&size=128`;
+                              }}
+                            />
                           </div>
-                          <div className="flex items-center gap-1 mb-3">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                className={cn(
-                                  'w-4 h-4',
-                                  i < review.rating
-                                    ? 'fill-amber-400 text-amber-400'
-                                    : 'text-muted-foreground',
-                                )}
-                              />
-                            ))}
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="font-semibold text-foreground">{review.author}</h4>
+                              <span className="text-sm text-muted-foreground">{review.date}</span>
+                            </div>
+                            <div className="flex items-center gap-1 mb-3">
+                              {[...Array(5)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={cn(
+                                    'w-4 h-4',
+                                    i < review.rating
+                                      ? 'fill-amber-400 text-amber-400'
+                                      : 'text-muted-foreground',
+                                  )}
+                                />
+                              ))}
+                            </div>
+                            <p className="text-muted-foreground">{review.content}</p>
                           </div>
-                          <p className="text-muted-foreground">{review.content}</p>
                         </div>
                       </div>
-                    </div>
-                  ))
+                    ))}
+
+                    {reviews.length > visibleReviewCount && (
+                      <Button
+                        variant="apple-outline"
+                        className="w-full"
+                        onClick={handleShowMoreReviews}
+                      >
+                        {showAllReviews
+                          ? 'Thu gọn đánh giá'
+                          : `Xem thêm đánh giá (${reviews.length - displayedReviews.length})`}
+                      </Button>
+                    )}
+                  </>
                 ) : (
                   <div className="text-center py-12 bg-secondary/30 rounded-3xl">
                     <p className="text-muted-foreground">Chưa có đánh giá nào cho sản phẩm này</p>
                   </div>
                 )}
-
-                <Button variant="apple-outline" className="w-full">
-                  Xem thêm đánh giá
-                </Button>
               </motion.div>
             )}
           </div>
 
-          {/* Related Products */}
           {loadingRelated ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto"></div>
@@ -728,7 +1018,7 @@ export default function ProductDetailPage() {
             <section>
               <h2 className="text-2xl font-bold text-foreground mb-8">Sản phẩm liên quan</h2>
               <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {relatedProducts.map((p, index) => (
+                {relatedProducts.slice(0, 4).map((p, index) => (
                   <ProductCard key={p.id} product={p} index={index} />
                 ))}
               </div>

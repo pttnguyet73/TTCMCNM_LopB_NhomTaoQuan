@@ -25,7 +25,6 @@ import { useToast } from '@/hooks/use-toast';
 import { formatPrice } from '@/lib/utils';
 import { ScrollArea } from '@radix-ui/react-scroll-area';
 
-// Constants
 const PRESET_COLORS = [
   { name: 'Đen', hex: '#000000' },
   { name: 'Trắng', hex: '#FFFFFF' },
@@ -172,7 +171,6 @@ const ProductManagement = () => {
     }));
   };
 
-  // Color handling
   const toggleColor = (color: Color) => {
     const exists = formData.colors.some((c) => c.hex === color.hex);
     setFormData((prev) => ({
@@ -181,7 +179,6 @@ const ProductManagement = () => {
     }));
   };
 
-  // Storage handling
   const toggleStorage = (storage: string) => {
     const exists = formData.storage.includes(storage);
     setFormData((prev) => ({
@@ -226,7 +223,6 @@ const ProductManagement = () => {
     setFormData({ ...formData, additionalSpecs: newSpecs });
   };
 
-  // Handle form submit (Add / Edit)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -239,7 +235,6 @@ const ProductManagement = () => {
       return;
     }
 
-    // Payload chính cho product
     const payload = {
       name: formData.name,
       description: formData.description,
@@ -254,15 +249,12 @@ const ProductManagement = () => {
     };
 
     try {
-      // --- Thêm mới product ---
       const res = await api.post('/products', payload);
       const newProductId = res.data.id;
 
-      // --- Thêm images ---
       if (formData.images.length > 0) {
         for (let i = 0; i < formData.images.length; i++) {
           const image = formData.images[i];
-          // Nếu là URL thì chỉ cần JSON
           await api.post('/product-images', {
             product_id: newProductId,
             image_url: image,
@@ -271,7 +263,6 @@ const ProductManagement = () => {
         }
       }
 
-      // --- Thêm colors ---
       if (formData.colors.length > 0) {
         for (const color of formData.colors) {
           await api.post('/product-colors', {
@@ -282,7 +273,6 @@ const ProductManagement = () => {
         }
       }
 
-      // --- Thêm required specs ---
       for (const spec of formData.requiredSpecs) {
         if (spec.value) {
           await api.post('/product-specs', {
@@ -293,7 +283,6 @@ const ProductManagement = () => {
         }
       }
 
-      // --- Thêm additional specs ---
       for (const spec of formData.additionalSpecs) {
         if (spec.label && spec.value) {
           await api.post('/product-specs', {
@@ -304,7 +293,6 @@ const ProductManagement = () => {
         }
       }
 
-      // --- Thêm storage ---
       for (const storage of formData.storage) {
         await api.post('/product-storages', {
           product_id: newProductId,
@@ -313,14 +301,12 @@ const ProductManagement = () => {
       }
       console.table(formData.images);
 
-      // --- Reload products và toast thành công ---
       fetchProducts();
       toast({
         title: 'Thành công',
         description: 'Thêm sản phẩm mới thành công',
       });
 
-      // Reset form
       setIsAddDialogOpen(false);
       setEditingProduct(null);
       resetForm();
@@ -330,7 +316,6 @@ const ProductManagement = () => {
     }
   };
 
-  // Reset form
   const resetForm = () => {
     setFormData({
       name: '',
@@ -352,14 +337,12 @@ const ProductManagement = () => {
     });
   };
 
-  // Open dialog for Add
   const handleOpenAddDialog = () => {
     setEditingProduct(null);
     resetForm();
     setIsAddDialogOpen(true);
   };
 
-  // Open dialog for Edit
   const handleOpenEditDialog = (product: Product) => {
     setEditingProduct(product);
     setFormData({
@@ -383,7 +366,6 @@ const ProductManagement = () => {
     setIsAddDialogOpen(true);
   };
 
-  // Delete product
   const handleDelete = async (productId: number) => {
     if (!window.confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) return;
 
@@ -397,7 +379,6 @@ const ProductManagement = () => {
     }
   };
 
-  // Filter products
   const filteredProducts = products.filter(
     (p) =>
       p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

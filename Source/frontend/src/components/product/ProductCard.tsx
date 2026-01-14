@@ -20,7 +20,6 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
     e.preventDefault();
     e.stopPropagation();
 
-    // ✅ Chuẩn CartItemProduct (id là number)
     const cartProduct = {
       id: Number(product.id),
       name: product.name,

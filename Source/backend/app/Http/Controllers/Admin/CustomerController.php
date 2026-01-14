@@ -8,9 +8,6 @@ use Illuminate\Support\Facades\DB;
 
 class CustomerController extends Controller
 {
-    /**
-     * Danh sách khách hàng
-     */
     public function index()
     {
         $customers = User::query()
@@ -25,8 +22,6 @@ class CustomerController extends Controller
                 'users.status',
                 'users.role',
                 'users.email_verified_at',
-
-                // Địa chỉ (lấy 1 địa chỉ đầu tiên)
                 DB::raw('MAX(address.street) AS street'),
                 DB::raw('MAX(address.district) AS district'),
                 DB::raw('COUNT(DISTINCT orders.id) AS orders_count'),
@@ -53,10 +48,8 @@ class CustomerController extends Controller
                     'status' => $customer->status,
                     'role' => $customer->role,
 
-                    // ✅ xác thực email
                     'email_verified_at' => $customer->email_verified_at,
 
-                    // ✅ địa chỉ gộp
                     'address' => $customer->street
                         ? $customer->street . ', ' . $customer->district
                         : 'Chưa cập nhật',
@@ -73,9 +66,6 @@ class CustomerController extends Controller
         ]);
     }
 
-    /**
-     * Thống kê
-     */
     public function stats()
     {
         return response()->json([
@@ -93,9 +83,6 @@ class CustomerController extends Controller
         ]);
     }
 
-    /**
-     * Chi tiết khách hàng
-     */
     public function show($id)
     {
         $customer = User::where('role', 'user')
@@ -134,10 +121,8 @@ class CustomerController extends Controller
                 'status' => $customer->status,
                 'role' => $customer->role,
 
-                // ✅ xác thực email
                 'email_verified_at' => $customer->email_verified_at,
 
-                // ✅ địa chỉ
                 'address' => $customer->street
                     ? $customer->street . ', ' . $customer->district
                     : 'Chưa cập nhật',
@@ -151,9 +136,6 @@ class CustomerController extends Controller
         ]);
     }
 
-    /**
-     * Đơn hàng của khách
-     */
     public function getOrders($id)
     {
         $orders = DB::table('orders')
