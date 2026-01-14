@@ -17,12 +17,15 @@ import NotFound from "./pages/NotFound";
 import SocialCallback from "./pages/SocialCallback";
 import AdminGuard from "./pages/AuthGuard.tsx";
 import Profile from "./pages/Profile.tsx";
+import { CheckoutProvider } from '@/contexts/CheckoutContext';
+
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <CartProvider>
+      <CheckoutProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
@@ -48,6 +51,7 @@ const App = () => (
 
         <ChatBot />
       </TooltipProvider>
+      </CheckoutProvider>
     </CartProvider>
   </QueryClientProvider>
 );

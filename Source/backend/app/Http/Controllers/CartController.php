@@ -56,7 +56,6 @@ public function store(Request $request)
         'product_id' => 'required|exists:products,id',
         'quantity' => 'required|integer|min:1',
         'color' => 'required|string|max:50',
-        'storage' => 'nullable|string|max:50',
     ]);
 
     $userId = Auth::id();
@@ -72,7 +71,6 @@ public function store(Request $request)
     $item = CartItem::where('cart_id', $cart->id)
         ->where('product_id', $request->product_id)
         ->where('color', $request->color)
-        ->where('storage', $request->storage)
         ->first();
 
     if ($item) {
@@ -87,7 +85,6 @@ public function store(Request $request)
             'product_id' => $product->id,
             'quantity' => $request->quantity,
             'color' => $request->color,
-            'storage' => $request->storage,
             'image' => $image, 
         ]);
     }

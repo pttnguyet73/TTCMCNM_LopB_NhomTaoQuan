@@ -132,6 +132,8 @@ Route::middleware('auth:sanctum')->get(
     '/my-orders',
     [OrderController::class, 'myOrders']
 );
+Route::post('/checkout', [OrderController::class, 'store'])
+    ->middleware('auth:sanctum');
 
 Route::post('/addresses', [App\Http\Controllers\AddressController::class, 'store']);
 Route::get('/addresses/{id}', [App\Http\Controllers\AddressController::class, 'show']);

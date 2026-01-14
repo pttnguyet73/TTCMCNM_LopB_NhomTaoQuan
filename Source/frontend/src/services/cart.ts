@@ -11,9 +11,8 @@ export interface CartItemFromApi {
   };
   image: string;
 }
-
 export interface AddToCartPayload {
-  product_id: number;
+  product_id: number; 
   color: string;
   quantity: number;
 }

@@ -153,6 +153,9 @@ const OrderManagement = () => {
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
   const { toast } = useToast();
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [newStatus, setNewStatus] = useState<string>('');
+
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -185,13 +188,13 @@ const OrderManagement = () => {
             payment_method: order.payment_method || 'COD',
             created_at: order.created_at
               ? new Date(order.created_at).toLocaleString('vi-VN', {
-                  hour12: false,
-                  day: '2-digit',
-                  month: '2-digit',
-                  year: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })
+                hour12: false,
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              })
               : 'Chưa cập nhật',
             raw_id: rawId,
           };
@@ -228,6 +231,7 @@ const OrderManagement = () => {
       }
 
       const res = await orderAPI.getOrderDetail(rawId);
+      setNewStatus(res.data.order.status);
 
       if (res.success && res.data) {
         setSelectedOrderDetail(res.data.order);
@@ -270,10 +274,10 @@ const OrderManagement = () => {
         prev.map((o) =>
           o.id === order.id
             ? {
-                ...o,
-                status: newStatus,
-                status_key: newStatus,
-              }
+              ...o,
+              status: newStatus,
+              status_key: newStatus,
+            }
             : o,
         ),
       );
@@ -282,10 +286,10 @@ const OrderManagement = () => {
         setSelectedOrderDetail((prev) =>
           prev
             ? {
-                ...prev,
-                status: newStatus,
-                status_key: newStatus,
-              }
+              ...prev,
+              status: newStatus,
+              status_key: newStatus,
+            }
             : null,
         );
       }
@@ -479,9 +483,8 @@ const OrderManagement = () => {
                           <td className="py-3 px-4 text-sm">{order.payment_method}</td>
                           <td className="py-3 px-4">
                             <span
-                              className={`inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-full ${
-                                statusConfigItem?.color || 'bg-gray-100 text-gray-700'
-                              }`}
+                              className={`inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-full ${statusConfigItem?.color || 'bg-gray-100 text-gray-700'
+                                }`}
                             >
                               <StatusIcon className="h-3 w-3" />
                               {order.status}
@@ -628,22 +631,20 @@ const OrderManagement = () => {
                   {selectedOrderDetail.coupon_code && (
                     <>
                       <div
-                        className={`p-3 rounded-lg ${
-                          selectedOrderDetail.coupon_data?.warning ||
-                          selectedOrderDetail.coupon_data?.error
+                        className={`p-3 rounded-lg ${selectedOrderDetail.coupon_data?.warning ||
+                            selectedOrderDetail.coupon_data?.error
                             ? 'bg-red-50 border border-red-200'
                             : 'bg-amber-50 border border-amber-200'
-                        }`}
+                          }`}
                       >
                         <div className="flex justify-between items-center">
                           <span className="text-muted-foreground font-medium">Mã giảm giá:</span>
                           <span
-                            className={`font-bold ${
-                              selectedOrderDetail.coupon_data?.warning ||
-                              selectedOrderDetail.coupon_data?.error
+                            className={`font-bold ${selectedOrderDetail.coupon_data?.warning ||
+                                selectedOrderDetail.coupon_data?.error
                                 ? 'text-red-700'
                                 : 'text-amber-700'
-                            }`}
+                              }`}
                           >
                             {selectedOrderDetail.coupon_code}
                           </span>
@@ -651,18 +652,17 @@ const OrderManagement = () => {
                         {selectedOrderDetail.coupon_data ? (
                           <>
                             <p
-                              className={`text-sm ${
-                                selectedOrderDetail.coupon_data?.warning ||
-                                selectedOrderDetail.coupon_data?.error
+                              className={`text-sm ${selectedOrderDetail.coupon_data?.warning ||
+                                  selectedOrderDetail.coupon_data?.error
                                   ? 'text-red-600'
                                   : 'text-amber-600'
-                              } mt-2`}
+                                } mt-2`}
                             >
                               {selectedOrderDetail.coupon_data.type === 'percentage'
                                 ? `Giảm ${selectedOrderDetail.coupon_data.value}% đơn hàng`
                                 : `Giảm ${Number(
-                                    selectedOrderDetail.coupon_data.value,
-                                  ).toLocaleString('vi-VN')} đ`}
+                                  selectedOrderDetail.coupon_data.value,
+                                ).toLocaleString('vi-VN')} đ`}
                             </p>
                             {selectedOrderDetail.coupon_data.min_order_amount && (
                               <p className="text-xs text-gray-500 mt-1">
@@ -745,16 +745,77 @@ const OrderManagement = () => {
                     </div>
                     {selectedOrderDetail.status && (
                       <Badge
-                        className={`text-base md:text-lg px-4 py-2 ${
-                          statusConfig[selectedOrderDetail.status as keyof typeof statusConfig]
+                        className={`text-base md:text-lg px-4 py-2 ${statusConfig[selectedOrderDetail.status as keyof typeof statusConfig]
                             ?.color || statusConfig['Chờ xác nhận'].color
-                        }`}
+                          }`}
                       >
                         {selectedOrderDetail.status}
                       </Badge>
                     )}
                   </div>
                 </div>
+                {/* Cập nhật trạng thái đơn hàng */}
+                <div className="border-t border-border pt-4 space-y-3">
+                  <p className="text-sm font-semibold">Cập nhật trạng thái đơn hàng</p>
+
+                  <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+                    <Select
+                      value={newStatus}
+                      onValueChange={setNewStatus}
+                      disabled={
+                        selectedOrderDetail.status === 'Hoàn thành' ||
+                        selectedOrderDetail.status === 'Đã hủy'
+                      }
+                    >
+                      <SelectTrigger className="w-full sm:w-60">
+                        <SelectValue placeholder="Chọn trạng thái" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Chờ xác nhận">Chờ xác nhận</SelectItem>
+                        <SelectItem value="Đã xác nhận">Đã xác nhận</SelectItem>
+                        <SelectItem value="Đang giao">Đang giao</SelectItem>
+                        <SelectItem value="Hoàn thành">Hoàn thành</SelectItem>
+                        <SelectItem value="Đã hủy">Đã hủy</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Button
+                      onClick={async () => {
+                        if (!selectedOrderDetail || newStatus === selectedOrderDetail.status) return;
+
+                        try {
+                          setUpdatingStatus(true);
+                          await handleUpdateStatus(
+                            {
+                              ...selectedOrderDetail,
+                              raw_id: selectedOrderDetail.raw_id,
+                            } as any,
+                            newStatus,
+                          );
+                        } finally {
+                          setUpdatingStatus(false);
+                        }
+                      }}
+                      disabled={
+                        updatingStatus ||
+                        newStatus === selectedOrderDetail.status ||
+                        selectedOrderDetail.status === 'Hoàn thành' ||
+                        selectedOrderDetail.status === 'Đã hủy'
+                      }
+                    >
+                      {updatingStatus && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                      Cập nhật
+                    </Button>
+                  </div>
+
+                  {(selectedOrderDetail.status === 'Hoàn thành' ||
+                    selectedOrderDetail.status === 'Đã hủy') && (
+                      <p className="text-xs text-muted-foreground">
+                        Đơn hàng đã kết thúc, không thể thay đổi trạng thái
+                      </p>
+                    )}
+                </div>
+
               </div>
             )
           )}

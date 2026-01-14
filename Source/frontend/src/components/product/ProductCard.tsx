@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useCart } from '@/contexts/CartContext';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import {  ProductCardItem } from '@/types/products';
+import { ProductCardItem } from '@/types/products';
 import { formatPrice } from '@/lib/utils';
 
 interface ProductCardProps {
@@ -40,7 +40,7 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
       inStock: product.inStock,
     };
 
-    addToCart(cartProduct, product.colors?.[0]?.name || '', product.storage?.[0] || '', 1);
+    addToCart(product.id, product.colors?.[0]?.name || '', 1);
 
     toast.success(`Đã thêm ${product.name} vào giỏ hàng`);
   };

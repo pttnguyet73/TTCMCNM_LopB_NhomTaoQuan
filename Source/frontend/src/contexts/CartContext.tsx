@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import { cartService } from '@/services/cart';
 import { toast } from 'sonner';
+
 export interface CartItem {
   cartItemId: number;
   product: {
@@ -17,6 +18,13 @@ interface CartContextType {
   items: CartItem[];
   totalItems: number;
   totalPrice: number;
+
+  discount: number;
+  setDiscount: (value: number) => void;
+shippingFee: number;
+
+  finalTotal: number;
+
   addToCart: (
     productId: number,
     color: string,
@@ -29,26 +37,26 @@ interface CartContextType {
   ) => Promise<void>;
   removeFromCart: (
     productId: number,
-    color: string,
+    color: string
   ) => Promise<void>;
   clearCart: () => Promise<void>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const SHIPPING_FEE = 50000;
+const FREE_SHIP_THRESHOLD = 2_000_000;
+
+export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [discount, setDiscount] = useState(0);
+  const [finalTotal, setFinalTotal] = useState(0);
 
-  useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(items));
-  }, [items]);
-
-    const fetchCart = async () => {
+  const fetchCart = async () => {
     try {
       const data = await cartService.getCart();
-
       setItems(
-        data.map(item => ({
+        data.map((item: any) => ({
           cartItemId: item.id,
           product: item.product,
           selectedColor: item.color,
@@ -65,78 +73,77 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     fetchCart();
   }, []);
 
+  /** 🔥 TÍNH FINAL TOTAL Ở ĐÂY (QUAN TRỌNG) */
+  useEffect(() => {
+    const totalPrice = items.reduce(
+      (sum, item) => sum + item.product.price * item.quantity,
+      0
+    );
 
-   const addToCart = async (
-    productId: number,
-    color: string,
-    quantity: number
-  ) => {
+    const shippingFee =
+      totalPrice >= FREE_SHIP_THRESHOLD ? 0 : SHIPPING_FEE;
+
+    const safeDiscount = Number(discount) || 0;
+
+    setFinalTotal(totalPrice - safeDiscount + shippingFee);
+  }, [items, discount]);
+
+  const addToCart = async (productId: number, color: string, quantity: number) => {
     try {
       await cartService.addToCart({
         product_id: productId,
-        color: color,
+        color,
         quantity,
       });
-
+      await fetchCart();
       toast.success('Đã thêm vào giỏ hàng');
-      fetchCart();
-    } catch (err) {
+    } catch {
       toast.error('Không thể thêm vào giỏ');
     }
   };
 
-  const updateQuantity = async (
-    productId: number,
-    color: string,
-    quantity: number
-  ) => {
+  const updateQuantity = async (productId: number, color: string, quantity: number) => {
     const item = items.find(
-      i =>
-        i.product.id === productId &&
-        i.selectedColor === color    );
-
+      i => i.product.id === productId && i.selectedColor === color
+    );
     if (!item || quantity < 1) return;
 
     try {
       await cartService.updateQuantity(item.cartItemId, quantity);
       fetchCart();
-    } catch (err) {
+    } catch {
       toast.error('Không thể cập nhật số lượng');
     }
   };
 
-  const removeFromCart = async (
-    productId: number,
-    color: string  ) => {
+  const removeFromCart = async (productId: number, color: string) => {
     const item = items.find(
-      i =>
-        i.product.id === productId &&
-        i.selectedColor === color 
+      i => i.product.id === productId && i.selectedColor === color
     );
-
     if (!item) return;
 
     try {
       await cartService.removeItem(item.cartItemId);
       toast.success('Đã xoá sản phẩm');
       fetchCart();
-    } catch (err) {
+    } catch {
       toast.error('Không thể xoá sản phẩm');
     }
   };
 
-const clearCart = async () => {
+  const clearCart = async () => {
     try {
       await cartService.clearCart();
       setItems([]);
+      setDiscount(0);
       toast.success('Đã xoá toàn bộ giỏ hàng');
-    } catch (err) {
+    } catch {
       toast.error('Không thể xoá giỏ hàng');
     }
   };
 
-const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-const totalPrice = items.reduce(
+  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+  const totalPrice = items.reduce(
     (sum, item) => sum + item.product.price * item.quantity,
     0
   );
@@ -145,9 +152,13 @@ const totalPrice = items.reduce(
     <CartContext.Provider
       value={{
         items,
-        totalPrice,
-        addToCart,
         totalItems,
+        totalPrice,
+        discount,
+        setDiscount,
+shippingFee: totalPrice >= FREE_SHIP_THRESHOLD ? 0 : SHIPPING_FEE,
+        finalTotal,
+        addToCart,
         updateQuantity,
         removeFromCart,
         clearCart,
@@ -156,7 +167,7 @@ const totalPrice = items.reduce(
       {children}
     </CartContext.Provider>
   );
-}
+};
 
 export const useCart = () => {
   const context = useContext(CartContext);

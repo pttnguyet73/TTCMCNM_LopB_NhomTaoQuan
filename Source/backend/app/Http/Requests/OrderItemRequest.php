@@ -27,7 +27,7 @@ class OrderItemRequest extends FormRequest
             'quantity' => 'required|integer|min:1',
             'price_at_purchase' => 'required|numeric|min:0',
             'color' => 'required|string',
-            'storage' => 'required|integer|min:0',
+            'storage' => 'nullable|integer|min:0',
         ];
     }
 }

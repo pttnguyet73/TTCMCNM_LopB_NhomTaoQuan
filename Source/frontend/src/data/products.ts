@@ -24,8 +24,7 @@ export const products: Product[] = [
     category: 'iphone',
     price: 34990000,
     originalPrice: 36990000,
-    image:
-      'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=800&auto=format&fit=crop&q=60',
+    image: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=800&auto=format&fit=crop&q=60',
     images: [
       'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=800&auto=format&fit=crop&q=60',
       'https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?w=800&auto=format&fit=crop&q=60',
@@ -56,8 +55,7 @@ export const products: Product[] = [
     category: 'iphone',
     price: 28990000,
     originalPrice: 30990000,
-    image:
-      'https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?w=800&auto=format&fit=crop&q=60',
+    image: 'https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?w=800&auto=format&fit=crop&q=60',
     images: [
       'https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?w=800&auto=format&fit=crop&q=60',
     ],
@@ -85,8 +83,7 @@ export const products: Product[] = [
     name: 'iPhone 15',
     category: 'iphone',
     price: 22990000,
-    image:
-      'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800&auto=format&fit=crop&q=60',
+    image: 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800&auto=format&fit=crop&q=60',
     images: [
       'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800&auto=format&fit=crop&q=60',
     ],
@@ -115,8 +112,7 @@ export const products: Product[] = [
     category: 'ipad',
     price: 28990000,
     originalPrice: 31990000,
-    image:
-      'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=800&auto=format&fit=crop&q=60',
+    image: 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=800&auto=format&fit=crop&q=60',
     images: [
       'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=800&auto=format&fit=crop&q=60',
     ],
@@ -143,8 +139,7 @@ export const products: Product[] = [
     name: 'iPad Air M2',
     category: 'ipad',
     price: 18990000,
-    image:
-      'https://images.unsplash.com/photo-1585790050230-5dd28404ccb9?w=800&auto=format&fit=crop&q=60',
+    image: 'https://images.unsplash.com/photo-1585790050230-5dd28404ccb9?w=800&auto=format&fit=crop&q=60',
     images: [
       'https://images.unsplash.com/photo-1585790050230-5dd28404ccb9?w=800&auto=format&fit=crop&q=60',
     ],
@@ -171,8 +166,7 @@ export const products: Product[] = [
     name: 'iPad (Gen 10)',
     category: 'ipad',
     price: 12990000,
-    image:
-      'https://images.unsplash.com/photo-1561154464-82e9adf32764?w=800&auto=format&fit=crop&q=60',
+    image: 'https://images.unsplash.com/photo-1561154464-82e9adf32764?w=800&auto=format&fit=crop&q=60',
     images: [
       'https://images.unsplash.com/photo-1561154464-82e9adf32764?w=800&auto=format&fit=crop&q=60',
     ],
@@ -200,8 +194,7 @@ export const products: Product[] = [
     category: 'mac',
     price: 89990000,
     originalPrice: 95990000,
-    image:
-      'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&auto=format&fit=crop&q=60',
+    image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&auto=format&fit=crop&q=60',
     images: [
       'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&auto=format&fit=crop&q=60',
     ],
@@ -228,8 +221,7 @@ export const products: Product[] = [
     name: 'MacBook Pro 14" M3 Pro',
     category: 'mac',
     price: 49990000,
-    image:
-      'https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=800&auto=format&fit=crop&q=60',
+    image: 'https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=800&auto=format&fit=crop&q=60',
     images: [
       'https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=800&auto=format&fit=crop&q=60',
     ],
@@ -254,8 +246,7 @@ export const products: Product[] = [
     name: 'MacBook Air M3',
     category: 'mac',
     price: 27990000,
-    image:
-      'https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?w=800&auto=format&fit=crop&q=60',
+    image: 'https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?w=800&auto=format&fit=crop&q=60',
     images: [
       'https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?w=800&auto=format&fit=crop&q=60',
     ],

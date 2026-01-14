@@ -11,12 +11,20 @@ import { toast } from 'sonner';
 import api from '@/lib/api';
 
 export default function CartPage() {
-  const { items, updateQuantity, removeFromCart, totalPrice, clearCart } = useCart();
   const [promoCode, setPromoCode] = useState('');
-  const [discount, setDiscount] = useState(0);
+ const {
+  items,
+  updateQuantity,
+  removeFromCart,
+  totalPrice,
+  shippingFee,
+  clearCart,
+  discount,
+  setDiscount,
+  finalTotal, 
+} = useCart();
 
-  const shippingFee = totalPrice >= 2000000 ? 0 : 50000;
-  const finalTotal = totalPrice - discount + shippingFee;
+
 
   const handleApplyPromo = async () => {
     if (!promoCode) return toast.error('Vui lòng nhập mã giảm giá');
@@ -31,13 +39,16 @@ export default function CartPage() {
       if (new Date(coupon.valid_from) > now || new Date(coupon.valid_to) < now) throw new Error('Mã giảm giá chưa tới hạn hoặc đã hết hạn');
 
       let newDiscount = 0;
+      const value = Number(coupon.value) || 0;
+
       if (coupon.type === 'percent') {
-        newDiscount = totalPrice * (coupon.value / 100);
+        newDiscount = totalPrice * (value / 100);
       } else if (coupon.type === 'fixed') {
-        newDiscount = coupon.value;
+        newDiscount = value;
       }
 
       setDiscount(newDiscount);
+
       toast.success(`Đã áp dụng mã giảm giá ${coupon.code} - Giảm ${formatPrice(newDiscount)}`);
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.message || 'Mã giảm giá không hợp lệ');
@@ -201,7 +212,7 @@ export default function CartPage() {
                 </h2>
 
                 {/* Promo Code */}
-                 <div className="mb-6">
+                <div className="mb-6">
                   <label className="text-sm font-medium text-foreground mb-2 block">Mã giảm giá</label>
                   <div className="flex gap-2">
                     <div className="relative flex-1">

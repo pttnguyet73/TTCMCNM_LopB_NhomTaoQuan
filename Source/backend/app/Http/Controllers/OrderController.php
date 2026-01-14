@@ -7,14 +7,83 @@ use App\Http\Requests\OrderRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Address;
+use App\Models\OrderItem;
 
 class OrderController extends Controller
 {
     // Tạo đơn hàng
-    public function store(OrderRequest $request)
+    public function store(Request $request)
     {
-        $order = Order::create($request->validated());
-        return response()->json($order, 201);
+        $user = Auth::id();
+        $data = $request->validate([
+            'shipping.fullName' => 'required|string',
+            'shipping.phone' => 'required|string',
+            'shipping.address' => 'required|string',
+            'shipping.district' => 'required|string',
+            'total_amount' => 'required|numeric|min:0',
+            'shipping_fee' => 'nullable|numeric|min:0',
+            'paymentMethod' => 'required|string',
+
+            'items' => 'required|array',
+            'items.*.product.id' => 'required|integer',
+            'items.*.product.price' => 'required|numeric',
+            'items.*.quantity' => 'required|integer|min:1',
+            'items.*.selectedColor' => 'nullable|string',
+            'items.*.selectedStorage' => 'nullable|string',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            /** 1. Tạo địa chỉ */
+            $address = Address::create([
+                'user_id' => $user,
+                'street' => $data['shipping']['address'],
+                'recipient_name' => $data['shipping']['fullName'],
+                'phone' => $data['shipping']['phone'],
+                'district' => $data['shipping']['district'],
+            ]);
+
+
+            /** 3. Tạo đơn hàng */
+            $order = Order::create([
+                'user_id' => $user,
+                'address_id' => $address->id,
+                'total_amount' => $data['total_amount'],
+                'shipping_fee' => $data['shipping_fee'] ?? 0,
+                    'coupon_code' => $data['coupon_code'] ?? null,
+                'status' => 'chờ xác nhận',
+            ]);
+
+            /** 4. Tạo order items */
+            foreach ($data['items'] as $item) {
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'product_id' => $item['product']['id'],
+                    'quantity' => $item['quantity'],
+                    'price_at_purchase' => $item['product']['price'],
+                    'color' => $item['selectedColor'] ?? null,
+                    'storage' => $item['selectedStorage'] ?? null,
+                ]);
+
+                
+            }
+            
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Đặt hàng thành công',
+                'order_id' => $order->id,
+            ], 201);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Tạo đơn hàng thất bại',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     // Cập nhật đơn hàng
@@ -25,20 +94,20 @@ class OrderController extends Controller
         return response()->json($order, 200);
     }
 
-public function myOrders(Request $request)
-{
-    $user = Auth::user();
+    public function myOrders(Request $request)
+    {
+        $user = Auth::id();
 
-    if (!$user) {
-        return response()->json(['message' => 'Unauthorized'], 401);
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        $orders = Order::where('user_id', $user)
+            ->latest()
+            ->get();
+
+        return response()->json($orders);
     }
-
-    $orders = Order::where('user_id', $user->id)
-                ->latest()
-                ->get();
-
-    return response()->json($orders); 
-}
 
     // Xóa đơn hàng
     public function destroy($id)

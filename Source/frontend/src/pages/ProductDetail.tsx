@@ -578,14 +578,12 @@ export default function ProductDetailPage() {
   };
 
   const handleAddToCart = () => {
-    const cartItem = convertToCartItemProduct();
-    addToCart(cartItem, selectedColor, selectedStorage, quantity);
+    addToCart(product.id, selectedColor, quantity);
     toast.success(`Đã thêm ${product.name} vào giỏ hàng`);
   };
 
   const handleBuyNow = () => {
-    const cartItem = convertToCartItemProduct();
-    addToCart(cartItem, selectedColor, selectedStorage, quantity);
+    addToCart(product.id, selectedColor,  quantity);
     navigate('/checkout');
   };
 
