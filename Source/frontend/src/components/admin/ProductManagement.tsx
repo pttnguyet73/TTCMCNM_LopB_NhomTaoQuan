@@ -1,34 +1,45 @@
-import { useEffect, useState, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import api from "@/lib/api";
-import { Plus, Search, Edit, Trash2, MoreVertical, Package, X, Upload, Check } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
-import { formatPrice } from "@/data/products";
-import { ScrollArea } from "@radix-ui/react-scroll-area";
+import { useEffect, useState, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import api from '@/lib/api';
+import { Plus, Search, Edit, Trash2, MoreVertical, Package, X, Upload, Check } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { formatPrice } from '@/lib/utils';
+import { ScrollArea } from '@radix-ui/react-scroll-area';
 
 // Constants
 const PRESET_COLORS = [
-  { name: "Đen", hex: "#000000" },
-  { name: "Trắng", hex: "#FFFFFF" },
-  { name: "Xám", hex: "#A9A9A9" },
-  { name: "Vàng", hex: "#FFD700" },
-  { name: "Hồng", hex: "#FF69B4" },
+  { name: 'Đen', hex: '#000000' },
+  { name: 'Trắng', hex: '#FFFFFF' },
+  { name: 'Xám', hex: '#A9A9A9' },
+  { name: 'Vàng', hex: '#FFD700' },
+  { name: 'Hồng', hex: '#FF69B4' },
 ];
 
-const PRESET_STORAGE = ["64GB", "128GB", "256GB", "512GB", "1TB"];
+const PRESET_STORAGE = ['64GB', '128GB', '256GB', '512GB', '1TB'];
 
 const REQUIRED_SPECS = [
-  { label: "Dung lượng", placeholder: "VD: 128GB, 256GB" },
-  { label: "RAM", placeholder: "VD: 8GB, 12GB" },
-  { label: "Màn hình", placeholder: "VD: 6.1 inch" },
+  { label: 'Dung lượng', placeholder: 'VD: 128GB, 256GB' },
+  { label: 'RAM', placeholder: 'VD: 8GB, 12GB' },
+  { label: 'Màn hình', placeholder: 'VD: 6.1 inch' },
 ];
 
 interface Category {
@@ -81,26 +92,25 @@ interface Product {
 }
 
 const ProductManagement = () => {
-
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState({
-    name: "",
-    category_id: "",
-    original_price: "",
-    price: "",
-    status: "1",
-    description: "",
-    imageUrl: "",
+    name: '',
+    category_id: '',
+    original_price: '',
+    price: '',
+    status: '1',
+    description: '',
+    imageUrl: '',
     images: [] as string[],
     colors: [] as Color[],
     storage: [] as string[],
-    customStorage: "",
-    requiredSpecs: REQUIRED_SPECS.map((s) => ({ label: s.label, value: "" })),
+    customStorage: '',
+    requiredSpecs: REQUIRED_SPECS.map((s) => ({ label: s.label, value: '' })),
     additionalSpecs: [] as Spec[],
     specs: [] as Spec[],
     rating: 5.0,
@@ -111,12 +121,12 @@ const ProductManagement = () => {
   // Fetch categories
   const fetchCategories = async () => {
     try {
-      const res = await api.get("/categories");
-      console.log("Categories API response:", res.data);
+      const res = await api.get('/categories');
+      console.log('Categories API response:', res.data);
 
       setCategories(res.data);
     } catch (err) {
-      console.error("Lỗi fetch danh mục:", err);
+      console.error('Lỗi fetch danh mục:', err);
     }
   };
 
@@ -124,12 +134,16 @@ const ProductManagement = () => {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const res = await api.get("/products");
+      const res = await api.get('/products');
       const productList = Array.isArray(res.data) ? res.data : res.data.data || [];
       setProducts(productList);
     } catch (err) {
-      console.error("Lỗi fetch sản phẩm:", err);
-      toast({ title: "Lỗi", description: "Không thể tải danh sách sản phẩm", variant: "destructive" });
+      console.error('Lỗi fetch sản phẩm:', err);
+      toast({
+        title: 'Lỗi',
+        description: 'Không thể tải danh sách sản phẩm',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
@@ -146,7 +160,7 @@ const ProductManagement = () => {
       setFormData((prev) => ({
         ...prev,
         images: [...prev.images, prev.imageUrl],
-        imageUrl: "",
+        imageUrl: '',
       }));
     }
   };
@@ -163,9 +177,7 @@ const ProductManagement = () => {
     const exists = formData.colors.some((c) => c.hex === color.hex);
     setFormData((prev) => ({
       ...prev,
-      colors: exists
-        ? prev.colors.filter((c) => c.hex !== color.hex)
-        : [...prev.colors, color],
+      colors: exists ? prev.colors.filter((c) => c.hex !== color.hex) : [...prev.colors, color],
     }));
   };
 
@@ -174,9 +186,7 @@ const ProductManagement = () => {
     const exists = formData.storage.includes(storage);
     setFormData((prev) => ({
       ...prev,
-      storage: exists
-        ? prev.storage.filter((s) => s !== storage)
-        : [...prev.storage, storage],
+      storage: exists ? prev.storage.filter((s) => s !== storage) : [...prev.storage, storage],
     }));
   };
 
@@ -185,7 +195,7 @@ const ProductManagement = () => {
       setFormData((prev) => ({
         ...prev,
         storage: [...prev.storage, prev.customStorage],
-        customStorage: "",
+        customStorage: '',
       }));
     }
   };
@@ -199,7 +209,7 @@ const ProductManagement = () => {
   const handleAddAdditionalSpec = () => {
     setFormData({
       ...formData,
-      additionalSpecs: [...formData.additionalSpecs, { label: "", value: "" }],
+      additionalSpecs: [...formData.additionalSpecs, { label: '', value: '' }],
     });
   };
 
@@ -210,7 +220,7 @@ const ProductManagement = () => {
     });
   };
 
-  const handleAdditionalSpecChange = (index: number, field: "label" | "value", value: string) => {
+  const handleAdditionalSpecChange = (index: number, field: 'label' | 'value', value: string) => {
     const newSpecs = [...formData.additionalSpecs];
     newSpecs[index][field] = value;
     setFormData({ ...formData, additionalSpecs: newSpecs });
@@ -218,121 +228,123 @@ const ProductManagement = () => {
 
   // Handle form submit (Add / Edit)
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (!formData.name || !formData.category_id || !formData.original_price) {
-    toast({ title: "Lỗi", description: "Vui lòng điền đầy đủ thông tin", variant: "destructive" });
-    return;
-  }
-
-  // Payload chính cho product
-  const payload = {
-    name: formData.name,
-    description: formData.description,
-    price: parseInt(formData.price || formData.original_price),
-    original_price: parseInt(formData.original_price),
-    status: parseInt(formData.status),
-    category_id: parseInt(formData.category_id),
-    is_featured: false,
-    is_new: false,
-    rating: 5.0,
-    review_count: 200,
-  };
-
-  try {
-    // --- Thêm mới product ---
-    const res = await api.post("/products", payload);
-    const newProductId = res.data.id;
-
-    // --- Thêm images ---
-    if (formData.images.length > 0) {
-      for (let i = 0; i < formData.images.length; i++) {
-        const image = formData.images[i];
-        // Nếu là URL thì chỉ cần JSON
-        await api.post("/product-images", {
-          product_id: newProductId,
-          image_url: image,
-          is_main: i === 0 ? 1 : 0,
-        });
-      }
-    }
-
-    // --- Thêm colors ---
-    if (formData.colors.length > 0) {
-      for (const color of formData.colors) {
-        await api.post("/product-colors", {
-          product_id: newProductId,
-          name: color.name,
-          hex: color.hex,
-        });
-      }
-    }
-
-    // --- Thêm required specs ---
-    for (const spec of formData.requiredSpecs) {
-      if (spec.value) {
-        await api.post("/product-specs", {
-          product_id: newProductId,
-          label: spec.label,
-          value: spec.value,
-        });
-      }
-    }
-
-    // --- Thêm additional specs ---
-    for (const spec of formData.additionalSpecs) {
-      if (spec.label && spec.value) {
-        await api.post("/product-specs", {
-          product_id: newProductId,
-          label: spec.label,
-          value: spec.value,
-        });
-      }
-    }
-
-    // --- Thêm storage ---
-    for (const storage of formData.storage) {
-      await api.post("/product-storages", {
-        product_id: newProductId,
-        storage: storage,
+    if (!formData.name || !formData.category_id || !formData.original_price) {
+      toast({
+        title: 'Lỗi',
+        description: 'Vui lòng điền đầy đủ thông tin',
+        variant: 'destructive',
       });
+      return;
     }
-console.table(formData.images);
 
-    // --- Reload products và toast thành công ---
-    fetchProducts();
-    toast({
-      title: "Thành công",
-      description: "Thêm sản phẩm mới thành công",
-    });
+    // Payload chính cho product
+    const payload = {
+      name: formData.name,
+      description: formData.description,
+      price: parseInt(formData.price || formData.original_price),
+      original_price: parseInt(formData.original_price),
+      status: parseInt(formData.status),
+      category_id: parseInt(formData.category_id),
+      is_featured: false,
+      is_new: false,
+      rating: 5.0,
+      review_count: 200,
+    };
 
-    // Reset form
-    setIsAddDialogOpen(false);
-    setEditingProduct(null);
-    resetForm();
+    try {
+      // --- Thêm mới product ---
+      const res = await api.post('/products', payload);
+      const newProductId = res.data.id;
 
-  } catch (error: any) {
-    console.error("Lỗi khi lưu sản phẩm:", error);
-    toast({ title: "Lỗi", description: "Thao tác thất bại", variant: "destructive" });
-  }
-};
+      // --- Thêm images ---
+      if (formData.images.length > 0) {
+        for (let i = 0; i < formData.images.length; i++) {
+          const image = formData.images[i];
+          // Nếu là URL thì chỉ cần JSON
+          await api.post('/product-images', {
+            product_id: newProductId,
+            image_url: image,
+            is_main: i === 0 ? 1 : 0,
+          });
+        }
+      }
 
+      // --- Thêm colors ---
+      if (formData.colors.length > 0) {
+        for (const color of formData.colors) {
+          await api.post('/product-colors', {
+            product_id: newProductId,
+            name: color.name,
+            hex: color.hex,
+          });
+        }
+      }
+
+      // --- Thêm required specs ---
+      for (const spec of formData.requiredSpecs) {
+        if (spec.value) {
+          await api.post('/product-specs', {
+            product_id: newProductId,
+            label: spec.label,
+            value: spec.value,
+          });
+        }
+      }
+
+      // --- Thêm additional specs ---
+      for (const spec of formData.additionalSpecs) {
+        if (spec.label && spec.value) {
+          await api.post('/product-specs', {
+            product_id: newProductId,
+            label: spec.label,
+            value: spec.value,
+          });
+        }
+      }
+
+      // --- Thêm storage ---
+      for (const storage of formData.storage) {
+        await api.post('/product-storages', {
+          product_id: newProductId,
+          storage: storage,
+        });
+      }
+      console.table(formData.images);
+
+      // --- Reload products và toast thành công ---
+      fetchProducts();
+      toast({
+        title: 'Thành công',
+        description: 'Thêm sản phẩm mới thành công',
+      });
+
+      // Reset form
+      setIsAddDialogOpen(false);
+      setEditingProduct(null);
+      resetForm();
+    } catch (error: any) {
+      console.error('Lỗi khi lưu sản phẩm:', error);
+      toast({ title: 'Lỗi', description: 'Thao tác thất bại', variant: 'destructive' });
+    }
+  };
 
   // Reset form
   const resetForm = () => {
     setFormData({
-      name: "",
-      category_id: "",
-      original_price: "",
-      price: "",
-      status: "1",
-      description: "",
-      imageUrl: "",
+      name: '',
+      category_id: '',
+      original_price: '',
+      price: '',
+      status: '1',
+      description: '',
+      imageUrl: '',
       images: [],
       colors: [],
       storage: [],
-      customStorage: "",
-      requiredSpecs: REQUIRED_SPECS.map((s) => ({ label: s.label, value: "" })),
+      customStorage: '',
+      requiredSpecs: REQUIRED_SPECS.map((s) => ({ label: s.label, value: '' })),
       additionalSpecs: [],
       specs: [],
       rating: 5.0,
@@ -357,12 +369,12 @@ console.table(formData.images);
       price: product.price.toString(),
       status: product.status.toString(),
       description: product.description,
-      imageUrl: "",
+      imageUrl: '',
       images: product.images?.map((img) => img.image_url) || [],
       colors: product.colors || [],
       storage: product.storages?.map((s) => s.storage) || [],
-      customStorage: "",
-      requiredSpecs: REQUIRED_SPECS.map((s) => ({ label: s.label, value: "" })),
+      customStorage: '',
+      requiredSpecs: REQUIRED_SPECS.map((s) => ({ label: s.label, value: '' })),
       additionalSpecs: [],
       specs: product.specs || [],
       rating: product.rating,
@@ -373,15 +385,15 @@ console.table(formData.images);
 
   // Delete product
   const handleDelete = async (productId: number) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa sản phẩm này?")) return;
+    if (!window.confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) return;
 
     try {
       await api.delete(`/products/${productId}`);
       setProducts((prev) => prev.filter((p) => p.id !== productId));
-      toast({ title: "Đã xóa", description: "Sản phẩm đã được xóa khỏi danh sách" });
+      toast({ title: 'Đã xóa', description: 'Sản phẩm đã được xóa khỏi danh sách' });
     } catch (err) {
       console.error(err);
-      toast({ title: "Lỗi", description: "Xóa sản phẩm thất bại", variant: "destructive" });
+      toast({ title: 'Lỗi', description: 'Xóa sản phẩm thất bại', variant: 'destructive' });
     }
   };
 
@@ -389,7 +401,7 @@ console.table(formData.images);
   const filteredProducts = products.filter(
     (p) =>
       p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (p.category?.name.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
+      (p.category?.name.toLowerCase().includes(searchTerm.toLowerCase()) ?? false),
   );
 
   return (
@@ -458,12 +470,24 @@ console.table(formData.images);
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Sản phẩm</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Danh mục</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Giá</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Đánh giá</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Trạng thái</th>
-                  <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Thao tác</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                    Sản phẩm
+                  </th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                    Danh mục
+                  </th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                    Giá
+                  </th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                    Đánh giá
+                  </th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                    Trạng thái
+                  </th>
+                  <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">
+                    Thao tác
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -479,33 +503,40 @@ console.table(formData.images);
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
                           <img
-                            src={product.images?.[0]?.image_url || "https://via.placeholder.com/50"}
+                            src={product.images?.[0]?.image_url || 'https://via.placeholder.com/50'}
                             alt={product.name}
                             className="w-12 h-12 object-cover rounded-lg bg-muted"
                           />
                           <div>
                             <p className="font-medium text-sm">{product.name}</p>
-                            <p className="text-xs text-muted-foreground truncate max-w-[200px]">{product.description}</p>
+                            <p className="text-xs text-muted-foreground truncate max-w-[200px]">
+                              {product.description}
+                            </p>
                           </div>
                         </div>
                       </td>
-                      <td className="py-3 px-4 text-sm">{product.category?.name || "N/A"}</td>
-                      <td className="py-3 px-4 text-sm font-medium">{formatPrice(product.price)}</td>
+                      <td className="py-3 px-4 text-sm">{product.category?.name || 'N/A'}</td>
+                      <td className="py-3 px-4 text-sm font-medium">
+                        {formatPrice(product.price)}
+                      </td>
                       <td className="py-3 px-4 text-sm">
                         <div className="flex items-center gap-1">
                           <span className="text-amber-500">★</span>
                           <span>{product.rating}</span>
-                          <span className="text-muted-foreground">({product.review_count ?? 0})</span>
+                          <span className="text-muted-foreground">
+                            ({product.review_count ?? 0})
+                          </span>
                         </div>
                       </td>
                       <td className="py-3 px-4">
                         <span
-                          className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${product.status > 0
-                            ? "bg-emerald-100 text-emerald-700"
-                            : "bg-destructive/10 text-destructive"
-                            }`}
+                          className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                            product.status > 0
+                              ? 'bg-emerald-100 text-emerald-700'
+                              : 'bg-destructive/10 text-destructive'
+                          }`}
                         >
-                          {product.status > 0 ? "Còn hàng" : "Hết hàng"}
+                          {product.status > 0 ? 'Còn hàng' : 'Hết hàng'}
                         </span>
                       </td>
                       <td className="py-3 px-4 text-right">
@@ -519,7 +550,10 @@ console.table(formData.images);
                             <DropdownMenuItem onClick={() => handleOpenEditDialog(product)}>
                               <Edit className="h-4 w-4 mr-2" /> Chỉnh sửa
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(product.id)}>
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onClick={() => handleDelete(product.id)}
+                            >
                               <Trash2 className="h-4 w-4 mr-2" /> Xóa
                             </DropdownMenuItem>
                           </DropdownMenuContent>
@@ -539,7 +573,7 @@ console.table(formData.images);
         <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-accent">
-              {editingProduct ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm mới"}
+              {editingProduct ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm mới'}
             </DialogTitle>
           </DialogHeader>
           <div className="overflow-y-auto flex-1 pr-4">
@@ -587,9 +621,7 @@ console.table(formData.images);
                   <Input
                     type="text"
                     value={formData.imageUrl}
-                    onChange={(e) =>
-                      setFormData({ ...formData, imageUrl: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
                     placeholder="Nhập URL ảnh (ví dụ: https://example.com/image.jpg)"
                     className="rounded-xl"
                   />
@@ -640,9 +672,7 @@ console.table(formData.images);
                     id="originalPrice"
                     type="number"
                     value={formData.original_price}
-                    onChange={(e) =>
-                      setFormData({ ...formData, original_price: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, original_price: e.target.value })}
                     placeholder="29.990.000"
                     className="rounded-xl"
                   />
@@ -655,9 +685,7 @@ console.table(formData.images);
                     id="salePrice"
                     type="number"
                     value={formData.price}
-                    onChange={(e) =>
-                      setFormData({ ...formData, price: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                     placeholder="Để trống nếu không khác"
                     className="rounded-xl"
                   />
@@ -668,9 +696,7 @@ console.table(formData.images);
                   </Label>
                   <Select
                     value={formData.status}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, status: value })
-                    }
+                    onValueChange={(value) => setFormData({ ...formData, status: value })}
                   >
                     <SelectTrigger className="rounded-xl">
                       <SelectValue placeholder="Chọn trạng thái" />
@@ -691,9 +717,7 @@ console.table(formData.images);
                 <Textarea
                   id="description"
                   value={formData.description}
-                  onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Nhập mô tả chi tiết sản phẩm..."
                   rows={3}
                   className="rounded-xl"
@@ -718,17 +742,21 @@ console.table(formData.images);
                           key={color.hex}
                           type="button"
                           onClick={() => toggleColor(color)}
-                          className={`relative w-8 h-8 rounded-full border-2 transition-all ${isSelected ? "border-accent scale-110" : "border-border hover:border-accent/50"
-                            }`}
+                          className={`relative w-8 h-8 rounded-full border-2 transition-all ${
+                            isSelected
+                              ? 'border-accent scale-110'
+                              : 'border-border hover:border-accent/50'
+                          }`}
                           style={{ backgroundColor: color.hex }}
                           title={color.name}
                         >
                           {isSelected && (
                             <Check
-                              className={`absolute inset-0 m-auto h-4 w-4 ${color.hex === "#FFFFFF" || color.hex === "#FFD700"
-                                ? "text-black"
-                                : "text-white"
-                                }`}
+                              className={`absolute inset-0 m-auto h-4 w-4 ${
+                                color.hex === '#FFFFFF' || color.hex === '#FFD700'
+                                  ? 'text-black'
+                                  : 'text-white'
+                              }`}
                             />
                           )}
                         </button>
@@ -737,7 +765,7 @@ console.table(formData.images);
                   </div>
                   {formData.colors.length > 0 && (
                     <p className="text-xs text-muted-foreground">
-                      Đã chọn: {formData.colors.map((c) => c.name).join(", ")}
+                      Đã chọn: {formData.colors.map((c) => c.name).join(', ')}
                     </p>
                   )}
                 </div>
@@ -753,10 +781,11 @@ console.table(formData.images);
                           key={storage}
                           type="button"
                           onClick={() => toggleStorage(storage)}
-                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${isSelected
-                            ? "bg-accent text-white"
-                            : "bg-background border border-border hover:border-accent"
-                            }`}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                            isSelected
+                              ? 'bg-accent text-white'
+                              : 'bg-background border border-border hover:border-accent'
+                          }`}
                         >
                           {storage}
                         </button>
@@ -813,7 +842,7 @@ console.table(formData.images);
                       <Input
                         value={spec.value}
                         onChange={(e) => handleRequiredSpecChange(index, e.target.value)}
-                        placeholder={REQUIRED_SPECS[index]?.placeholder || "Nhập giá trị"}
+                        placeholder={REQUIRED_SPECS[index]?.placeholder || 'Nhập giá trị'}
                         className="rounded-xl"
                       />
                     </div>
@@ -843,7 +872,7 @@ console.table(formData.images);
                             placeholder="Tên thông số"
                             value={spec.label}
                             onChange={(e) =>
-                              handleAdditionalSpecChange(index, "label", e.target.value)
+                              handleAdditionalSpecChange(index, 'label', e.target.value)
                             }
                             className="flex-1 rounded-xl"
                           />
@@ -851,7 +880,7 @@ console.table(formData.images);
                             placeholder="Giá trị"
                             value={spec.value}
                             onChange={(e) =>
-                              handleAdditionalSpecChange(index, "value", e.target.value)
+                              handleAdditionalSpecChange(index, 'value', e.target.value)
                             }
                             className="flex-1 rounded-xl"
                           />
@@ -882,7 +911,7 @@ console.table(formData.images);
                   Hủy
                 </Button>
                 <Button type="submit" className="bg-accent hover:bg-accent/90 rounded-xl px-8">
-                  {editingProduct ? "Cập nhật" : "Thêm mới"}
+                  {editingProduct ? 'Cập nhật' : 'Thêm mới'}
                 </Button>
               </div>
             </form>

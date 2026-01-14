@@ -1,40 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-
-interface CartItemProduct {
-  id: string; // ✅ Sửa: id là string thay vì number
-  name: string;
-  price: number;
-  image: string;
-  description: string;
-  colors?: Array<{ name: string; hex: string }>;
-  storage?: string[];
-  category?: string;
-  rating?: number;
-  reviews?: number;
-  isNew?: boolean;
-  originalPrice?: number;
-  inStock?: boolean;
-  specs?: Array<{ label: string; value: string }>;
-  images?: string[];
-}
-
-interface CartItem {
-  id: string; // ✅ Sửa: id là string
-  name: string;
-  price: number;
-  image: string;
-  description: string;
-  selectedColor: string;
-  selectedStorage: string;
-  quantity: number;
-  product: CartItemProduct;
-}
+import { CartItemProduct, CartItem } from '@/types/products';
 
 interface CartContextType {
   items: CartItem[];
   addToCart: (product: CartItemProduct, color: string, storage: string, quantity?: number) => void;
-  removeFromCart: (productId: string, color: string, storage: string) => void;
-  updateQuantity: (productId: string, color: string, storage: string, quantity: number) => void;
+  removeFromCart: (productId: number, color: string, storage: string) => void;
+  updateQuantity: (productId: number, color: string, storage: string, quantity: number) => void;
   clearCart: () => void;
   totalItems: number;
   totalPrice: number;
@@ -77,8 +48,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return updated;
       }
 
+      // ✅ Tạo unique ID cho CartItem (kết hợp productId, color và storage)
+      const cartItemId = `${product.id}-${color}-${storage}`;
+
       const newItem: CartItem = {
-        id: product.id, // ✅ Giữ nguyên id string
+        id: cartItemId,
         name: product.name,
         price: product.price,
         image: product.image,
@@ -93,7 +67,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
-  const removeFromCart = (productId: string, color: string, storage: string) => {
+  const removeFromCart = (productId: number, color: string, storage: string) => {
     setItems((prev) =>
       prev.filter(
         (item) =>
@@ -106,7 +80,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
   };
 
-  const updateQuantity = (productId: string, color: string, storage: string, quantity: number) => {
+  const updateQuantity = (productId: number, color: string, storage: string, quantity: number) => {
     setItems((prev) => {
       if (quantity <= 0) {
         return prev.filter(

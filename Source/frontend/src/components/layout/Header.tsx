@@ -76,9 +76,9 @@ const mapApiToLocalProduct = (apiProduct: ApiProduct): LocalProduct => {
 
   const specs: { label: string; value: string }[] = [];
 
-  if (apiProduct.specs && Array.isArray(apiProduct.specs)) {
+  if (apiProduct.specifications && Array.isArray(apiProduct.specifications)) {
     specs.push(
-      ...apiProduct.specs.map((spec: any) => ({
+      ...apiProduct.specifications.map((spec: any) => ({
         label: spec.label || spec.key || '',
         value: spec.value || '',
       })),

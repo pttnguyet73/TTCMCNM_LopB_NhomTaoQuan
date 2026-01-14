@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { useCart } from '@/contexts/CartContext';
-import { formatPrice } from '@/data/products';
+import { formatPrice } from '@/lib/utils';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -40,9 +40,7 @@ export default function CartPage() {
               <div className="w-24 h-24 bg-secondary rounded-full flex items-center justify-center mx-auto mb-6">
                 <ShoppingBag className="w-12 h-12 text-muted-foreground" />
               </div>
-              <h1 className="text-3xl font-bold text-foreground mb-4">
-                Giỏ hàng trống
-              </h1>
+              <h1 className="text-3xl font-bold text-foreground mb-4">Giỏ hàng trống</h1>
               <p className="text-muted-foreground mb-8 max-w-md mx-auto">
                 Bạn chưa có sản phẩm nào trong giỏ hàng. Hãy khám phá các sản phẩm của chúng tôi!
               </p>
@@ -123,12 +121,14 @@ export default function CartPage() {
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 rounded-lg"
-                          onClick={() => updateQuantity(
-                            item.product.id,
-                            item.selectedColor,
-                            item.selectedStorage,
-                            item.quantity - 1
-                          )}
+                          onClick={() =>
+                            updateQuantity(
+                              item.product.id,
+                              item.selectedColor,
+                              item.selectedStorage,
+                              item.quantity - 1,
+                            )
+                          }
                         >
                           <Minus className="w-4 h-4" />
                         </Button>
@@ -137,12 +137,14 @@ export default function CartPage() {
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 rounded-lg"
-                          onClick={() => updateQuantity(
-                            item.product.id,
-                            item.selectedColor,
-                            item.selectedStorage,
-                            item.quantity + 1
-                          )}
+                          onClick={() =>
+                            updateQuantity(
+                              item.product.id,
+                              item.selectedColor,
+                              item.selectedStorage,
+                              item.quantity + 1,
+                            )
+                          }
                         >
                           <Plus className="w-4 h-4" />
                         </Button>
@@ -152,11 +154,9 @@ export default function CartPage() {
                         variant="ghost"
                         size="icon"
                         className="text-destructive hover:bg-destructive/10"
-                        onClick={() => removeFromCart(
-                          item.product.id,
-                          item.selectedColor,
-                          item.selectedStorage
-                        )}
+                        onClick={() =>
+                          removeFromCart(item.product.id, item.selectedColor, item.selectedStorage)
+                        }
                       >
                         <Trash2 className="w-5 h-5" />
                       </Button>
@@ -167,7 +167,11 @@ export default function CartPage() {
 
               {/* Clear Cart */}
               <div className="flex justify-end">
-                <Button variant="ghost" onClick={clearCart} className="text-destructive hover:bg-destructive/10">
+                <Button
+                  variant="ghost"
+                  onClick={clearCart}
+                  className="text-destructive hover:bg-destructive/10"
+                >
                   <Trash2 className="w-4 h-4 mr-2" />
                   Xóa tất cả
                 </Button>
@@ -181,9 +185,7 @@ export default function CartPage() {
               transition={{ delay: 0.2 }}
             >
               <div className="sticky top-24 p-6 bg-card rounded-2xl border border-border">
-                <h2 className="text-xl font-bold text-foreground mb-6">
-                  Tóm tắt đơn hàng
-                </h2>
+                <h2 className="text-xl font-bold text-foreground mb-6">Tóm tắt đơn hàng</h2>
 
                 {/* Promo Code */}
                 <div className="mb-6">
@@ -205,9 +207,7 @@ export default function CartPage() {
                       Áp dụng
                     </Button>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Thử mã: ISTORE10
-                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">Thử mã: ISTORE10</p>
                 </div>
 
                 {/* Summary */}

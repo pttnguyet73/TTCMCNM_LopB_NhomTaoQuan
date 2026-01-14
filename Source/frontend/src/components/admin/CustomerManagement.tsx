@@ -39,7 +39,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { customerAPI, type Customer, type Order } from '@/services/customer';
-import { formatPrice } from '@/data/products';
+import { formatPrice } from '@/lib/utils';
 import {
   Table,
   TableBody,

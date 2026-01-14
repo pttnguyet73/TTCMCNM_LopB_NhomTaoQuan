@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus,
   Search,
@@ -17,46 +17,41 @@ import {
   Percent,
   Gift,
   Send,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+} from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Switch } from "@/components/ui/switch";
-import { useToast } from "@/hooks/use-toast";
-import { formatPrice } from "@/data/products";
+} from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
+import { useToast } from '@/hooks/use-toast';
+import { formatPrice } from '@/lib/utils';
 
 interface Coupon {
   id: string;
   code: string;
-  type: "percent" | "fixed";
+  type: 'percent' | 'fixed';
   value: number;
   minOrder: number;
   maxDiscount: number;
   usageLimit: number;
   usageCount: number;
-  status: "active" | "expired" | "disabled";
+  status: 'active' | 'expired' | 'disabled';
   startDate: string;
   endDate: string;
 }
@@ -65,7 +60,7 @@ interface EmailCampaign {
   id: string;
   name: string;
   subject: string;
-  status: "draft" | "scheduled" | "sent";
+  status: 'draft' | 'scheduled' | 'sent';
   recipients: number;
   openRate: number;
   clickRate: number;
@@ -85,122 +80,123 @@ interface SEOSettings {
 
 const mockCoupons: Coupon[] = [
   {
-    id: "CPN-001",
-    code: "TET2024",
-    type: "percent",
+    id: 'CPN-001',
+    code: 'TET2024',
+    type: 'percent',
     value: 15,
     minOrder: 5000000,
     maxDiscount: 2000000,
     usageLimit: 100,
     usageCount: 45,
-    status: "active",
-    startDate: "2024-01-15",
-    endDate: "2024-02-15",
+    status: 'active',
+    startDate: '2024-01-15',
+    endDate: '2024-02-15',
   },
   {
-    id: "CPN-002",
-    code: "WELCOME10",
-    type: "percent",
+    id: 'CPN-002',
+    code: 'WELCOME10',
+    type: 'percent',
     value: 10,
     minOrder: 2000000,
     maxDiscount: 1000000,
     usageLimit: 500,
     usageCount: 234,
-    status: "active",
-    startDate: "2024-01-01",
-    endDate: "2024-12-31",
+    status: 'active',
+    startDate: '2024-01-01',
+    endDate: '2024-12-31',
   },
   {
-    id: "CPN-003",
-    code: "FREESHIP",
-    type: "fixed",
+    id: 'CPN-003',
+    code: 'FREESHIP',
+    type: 'fixed',
     value: 50000,
     minOrder: 1000000,
     maxDiscount: 50000,
     usageLimit: 1000,
     usageCount: 1000,
-    status: "expired",
-    startDate: "2023-12-01",
-    endDate: "2024-01-01",
+    status: 'expired',
+    startDate: '2023-12-01',
+    endDate: '2024-01-01',
   },
 ];
 
 const mockEmailCampaigns: EmailCampaign[] = [
   {
-    id: "EML-001",
-    name: "Khuyến mãi Tết 2024",
-    subject: "🎉 Giảm đến 30% - Ưu đãi Tết Giáp Thìn!",
-    status: "sent",
+    id: 'EML-001',
+    name: 'Khuyến mãi Tết 2024',
+    subject: '🎉 Giảm đến 30% - Ưu đãi Tết Giáp Thìn!',
+    status: 'sent',
     recipients: 5420,
     openRate: 42.5,
     clickRate: 12.3,
-    scheduledAt: "2024-01-15 09:00",
-    sentAt: "2024-01-15 09:00",
+    scheduledAt: '2024-01-15 09:00',
+    sentAt: '2024-01-15 09:00',
   },
   {
-    id: "EML-002",
-    name: "Ra mắt iPhone 16",
-    subject: "iPhone 16 đã có mặt - Đặt hàng ngay!",
-    status: "scheduled",
+    id: 'EML-002',
+    name: 'Ra mắt iPhone 16',
+    subject: 'iPhone 16 đã có mặt - Đặt hàng ngay!',
+    status: 'scheduled',
     recipients: 8500,
     openRate: 0,
     clickRate: 0,
-    scheduledAt: "2024-01-20 10:00",
-    sentAt: "",
+    scheduledAt: '2024-01-20 10:00',
+    sentAt: '',
   },
   {
-    id: "EML-003",
-    name: "Newsletter tháng 1",
-    subject: "Tin tức Apple tháng 1/2024",
-    status: "draft",
+    id: 'EML-003',
+    name: 'Newsletter tháng 1',
+    subject: 'Tin tức Apple tháng 1/2024',
+    status: 'draft',
     recipients: 0,
     openRate: 0,
     clickRate: 0,
-    scheduledAt: "",
-    sentAt: "",
+    scheduledAt: '',
+    sentAt: '',
   },
 ];
 
 const defaultSEO: SEOSettings = {
-  metaTitle: "AppleStore - Đại lý ủy quyền Apple chính hãng",
-  metaDescription: "Mua iPhone, iPad, MacBook, Apple Watch chính hãng với giá tốt nhất. Bảo hành chính hãng, trả góp 0%, giao hàng miễn phí toàn quốc.",
-  keywords: "iphone, ipad, macbook, apple watch, apple chính hãng, đại lý apple",
-  ogImage: "https://example.com/og-image.jpg",
-  robots: "index, follow",
+  metaTitle: 'AppleStore - Đại lý ủy quyền Apple chính hãng',
+  metaDescription:
+    'Mua iPhone, iPad, MacBook, Apple Watch chính hãng với giá tốt nhất. Bảo hành chính hãng, trả góp 0%, giao hàng miễn phí toàn quốc.',
+  keywords: 'iphone, ipad, macbook, apple watch, apple chính hãng, đại lý apple',
+  ogImage: 'https://example.com/og-image.jpg',
+  robots: 'index, follow',
   sitemap: true,
-  analytics: "G-XXXXXXXXXX",
+  analytics: 'G-XXXXXXXXXX',
 };
 
 const statusConfig = {
-  active: { label: "Hoạt động", color: "bg-emerald-100 text-emerald-700", icon: CheckCircle },
-  expired: { label: "Hết hạn", color: "bg-muted text-muted-foreground", icon: XCircle },
-  disabled: { label: "Vô hiệu", color: "bg-destructive/10 text-destructive", icon: XCircle },
-  draft: { label: "Nháp", color: "bg-muted text-muted-foreground", icon: Clock },
-  scheduled: { label: "Đã lên lịch", color: "bg-blue-100 text-blue-700", icon: Clock },
-  sent: { label: "Đã gửi", color: "bg-emerald-100 text-emerald-700", icon: CheckCircle },
+  active: { label: 'Hoạt động', color: 'bg-emerald-100 text-emerald-700', icon: CheckCircle },
+  expired: { label: 'Hết hạn', color: 'bg-muted text-muted-foreground', icon: XCircle },
+  disabled: { label: 'Vô hiệu', color: 'bg-destructive/10 text-destructive', icon: XCircle },
+  draft: { label: 'Nháp', color: 'bg-muted text-muted-foreground', icon: Clock },
+  scheduled: { label: 'Đã lên lịch', color: 'bg-blue-100 text-blue-700', icon: Clock },
+  sent: { label: 'Đã gửi', color: 'bg-emerald-100 text-emerald-700', icon: CheckCircle },
 };
 
 const MarketingManagement = () => {
   const [coupons, setCoupons] = useState<Coupon[]>(mockCoupons);
   const [emailCampaigns, setEmailCampaigns] = useState<EmailCampaign[]>(mockEmailCampaigns);
   const [seoSettings, setSeoSettings] = useState<SEOSettings>(defaultSEO);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState('');
   const [isCouponDialogOpen, setIsCouponDialogOpen] = useState(false);
   const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
   const [couponForm, setCouponForm] = useState({
-    code: "",
-    type: "percent" as "percent" | "fixed",
-    value: "",
-    minOrder: "",
-    maxDiscount: "",
-    usageLimit: "",
-    startDate: "",
-    endDate: "",
+    code: '',
+    type: 'percent' as 'percent' | 'fixed',
+    value: '',
+    minOrder: '',
+    maxDiscount: '',
+    usageLimit: '',
+    startDate: '',
+    endDate: '',
   });
   const { toast } = useToast();
 
   const filteredCoupons = coupons.filter((coupon) =>
-    coupon.code.toLowerCase().includes(searchTerm.toLowerCase())
+    coupon.code.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   const handleOpenCouponDialog = (coupon?: Coupon) => {
@@ -218,14 +214,14 @@ const MarketingManagement = () => {
       setEditingCoupon(coupon);
     } else {
       setCouponForm({
-        code: "",
-        type: "percent",
-        value: "",
-        minOrder: "",
-        maxDiscount: "",
-        usageLimit: "",
-        startDate: "",
-        endDate: "",
+        code: '',
+        type: 'percent',
+        value: '',
+        minOrder: '',
+        maxDiscount: '',
+        usageLimit: '',
+        startDate: '',
+        endDate: '',
       });
       setEditingCoupon(null);
     }
@@ -236,9 +232,9 @@ const MarketingManagement = () => {
     e.preventDefault();
     if (!couponForm.code || !couponForm.value) {
       toast({
-        title: "Lỗi",
-        description: "Vui lòng điền đầy đủ thông tin",
-        variant: "destructive",
+        title: 'Lỗi',
+        description: 'Vui lòng điền đầy đủ thông tin',
+        variant: 'destructive',
       });
       return;
     }
@@ -258,10 +254,10 @@ const MarketingManagement = () => {
                 startDate: couponForm.startDate,
                 endDate: couponForm.endDate,
               }
-            : c
-        )
+            : c,
+        ),
       );
-      toast({ title: "Thành công", description: "Cập nhật mã giảm giá thành công" });
+      toast({ title: 'Thành công', description: 'Cập nhật mã giảm giá thành công' });
     } else {
       const newCoupon: Coupon = {
         id: `CPN-${Date.now()}`,
@@ -272,34 +268,39 @@ const MarketingManagement = () => {
         maxDiscount: parseInt(couponForm.maxDiscount) || 0,
         usageLimit: parseInt(couponForm.usageLimit) || 0,
         usageCount: 0,
-        status: "active",
+        status: 'active',
         startDate: couponForm.startDate,
         endDate: couponForm.endDate,
       };
       setCoupons((prev) => [newCoupon, ...prev]);
-      toast({ title: "Thành công", description: "Tạo mã giảm giá mới thành công" });
+      toast({ title: 'Thành công', description: 'Tạo mã giảm giá mới thành công' });
     }
     setIsCouponDialogOpen(false);
   };
 
   const handleDeleteCoupon = (id: string) => {
     setCoupons((prev) => prev.filter((c) => c.id !== id));
-    toast({ title: "Đã xóa", description: "Mã giảm giá đã được xóa" });
+    toast({ title: 'Đã xóa', description: 'Mã giảm giá đã được xóa' });
   };
 
   const handleCopyCode = (code: string) => {
     navigator.clipboard.writeText(code);
-    toast({ title: "Đã sao chép", description: `Mã ${code} đã được sao chép` });
+    toast({ title: 'Đã sao chép', description: `Mã ${code} đã được sao chép` });
   };
 
   const handleSaveSEO = () => {
-    toast({ title: "Thành công", description: "Cài đặt SEO đã được lưu" });
+    toast({ title: 'Thành công', description: 'Cài đặt SEO đã được lưu' });
   };
 
   const stats = {
-    activeCoupons: coupons.filter((c) => c.status === "active").length,
-    totalSaved: coupons.reduce((sum, c) => sum + (c.usageCount * (c.type === "percent" ? c.maxDiscount : c.value)), 0),
-    emailsSent: emailCampaigns.filter((e) => e.status === "sent").reduce((sum, e) => sum + e.recipients, 0),
+    activeCoupons: coupons.filter((c) => c.status === 'active').length,
+    totalSaved: coupons.reduce(
+      (sum, c) => sum + c.usageCount * (c.type === 'percent' ? c.maxDiscount : c.value),
+      0,
+    ),
+    emailsSent: emailCampaigns
+      .filter((e) => e.status === 'sent')
+      .reduce((sum, e) => sum + e.recipients, 0),
   };
 
   return (
@@ -373,7 +374,10 @@ const MarketingManagement = () => {
                 className="pl-10"
               />
             </div>
-            <Button onClick={() => handleOpenCouponDialog()} className="bg-accent hover:bg-accent/90">
+            <Button
+              onClick={() => handleOpenCouponDialog()}
+              className="bg-accent hover:bg-accent/90"
+            >
               <Plus className="h-4 w-4 mr-2" />
               Tạo mã giảm giá
             </Button>
@@ -385,13 +389,27 @@ const MarketingManagement = () => {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-border">
-                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Mã</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Giảm giá</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Đơn tối thiểu</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Đã dùng</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Trạng thái</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Thời hạn</th>
-                      <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Thao tác</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                        Mã
+                      </th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                        Giảm giá
+                      </th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                        Đơn tối thiểu
+                      </th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                        Đã dùng
+                      </th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                        Trạng thái
+                      </th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                        Thời hạn
+                      </th>
+                      <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">
+                        Thao tác
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -422,7 +440,7 @@ const MarketingManagement = () => {
                               </div>
                             </td>
                             <td className="py-3 px-4 text-sm font-medium">
-                              {coupon.type === "percent" ? (
+                              {coupon.type === 'percent' ? (
                                 <span className="flex items-center gap-1">
                                   <Percent className="h-3 w-3" />
                                   {coupon.value}%
@@ -437,7 +455,9 @@ const MarketingManagement = () => {
                             </td>
                             <td className="py-3 px-4">
                               <span
-                                className={`inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-full ${statusConfig[coupon.status].color}`}
+                                className={`inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-full ${
+                                  statusConfig[coupon.status].color
+                                }`}
                               >
                                 <StatusIcon className="h-3 w-3" />
                                 {statusConfig[coupon.status].label}
@@ -499,7 +519,9 @@ const MarketingManagement = () => {
                         <div className="flex items-center gap-2 mb-1">
                           <h4 className="font-medium">{campaign.name}</h4>
                           <span
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full ${statusConfig[campaign.status].color}`}
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full ${
+                              statusConfig[campaign.status].color
+                            }`}
                           >
                             <StatusIcon className="h-3 w-3" />
                             {statusConfig[campaign.status].label}
@@ -510,13 +532,15 @@ const MarketingManagement = () => {
                           <span className="text-muted-foreground">
                             Người nhận: <strong>{campaign.recipients.toLocaleString()}</strong>
                           </span>
-                          {campaign.status === "sent" && (
+                          {campaign.status === 'sent' && (
                             <>
                               <span className="text-muted-foreground">
-                                Tỷ lệ mở: <strong className="text-emerald-600">{campaign.openRate}%</strong>
+                                Tỷ lệ mở:{' '}
+                                <strong className="text-emerald-600">{campaign.openRate}%</strong>
                               </span>
                               <span className="text-muted-foreground">
-                                Tỷ lệ click: <strong className="text-accent">{campaign.clickRate}%</strong>
+                                Tỷ lệ click:{' '}
+                                <strong className="text-accent">{campaign.clickRate}%</strong>
                               </span>
                             </>
                           )}
@@ -538,7 +562,7 @@ const MarketingManagement = () => {
                             <Edit className="h-4 w-4 mr-2" />
                             Chỉnh sửa
                           </DropdownMenuItem>
-                          {campaign.status === "draft" && (
+                          {campaign.status === 'draft' && (
                             <DropdownMenuItem>
                               <Send className="h-4 w-4 mr-2" />
                               Gửi ngay
@@ -573,18 +597,24 @@ const MarketingManagement = () => {
                   onChange={(e) => setSeoSettings({ ...seoSettings, metaTitle: e.target.value })}
                   placeholder="Tiêu đề trang"
                 />
-                <p className="text-xs text-muted-foreground">{seoSettings.metaTitle.length}/60 ký tự</p>
+                <p className="text-xs text-muted-foreground">
+                  {seoSettings.metaTitle.length}/60 ký tự
+                </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="metaDescription">Meta Description</Label>
                 <Textarea
                   id="metaDescription"
                   value={seoSettings.metaDescription}
-                  onChange={(e) => setSeoSettings({ ...seoSettings, metaDescription: e.target.value })}
+                  onChange={(e) =>
+                    setSeoSettings({ ...seoSettings, metaDescription: e.target.value })
+                  }
                   placeholder="Mô tả trang"
                   rows={3}
                 />
-                <p className="text-xs text-muted-foreground">{seoSettings.metaDescription.length}/160 ký tự</p>
+                <p className="text-xs text-muted-foreground">
+                  {seoSettings.metaDescription.length}/160 ký tự
+                </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="keywords">Keywords</Label>
@@ -639,7 +669,9 @@ const MarketingManagement = () => {
                 </div>
                 <Switch
                   checked={seoSettings.sitemap}
-                  onCheckedChange={(checked) => setSeoSettings({ ...seoSettings, sitemap: checked })}
+                  onCheckedChange={(checked) =>
+                    setSeoSettings({ ...seoSettings, sitemap: checked })
+                  }
                 />
               </div>
               <div className="flex justify-end">
@@ -724,9 +756,7 @@ const MarketingManagement = () => {
           </div>
 
           <div className="flex justify-end">
-            <Button className="bg-accent hover:bg-accent/90">
-              Lưu cài đặt
-            </Button>
+            <Button className="bg-accent hover:bg-accent/90">Lưu cài đặt</Button>
           </div>
         </TabsContent>
       </Tabs>
@@ -736,7 +766,7 @@ const MarketingManagement = () => {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {editingCoupon ? "Chỉnh sửa mã giảm giá" : "Tạo mã giảm giá mới"}
+              {editingCoupon ? 'Chỉnh sửa mã giảm giá' : 'Tạo mã giảm giá mới'}
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmitCoupon} className="space-y-4">
@@ -745,7 +775,9 @@ const MarketingManagement = () => {
               <Input
                 id="code"
                 value={couponForm.code}
-                onChange={(e) => setCouponForm({ ...couponForm, code: e.target.value.toUpperCase() })}
+                onChange={(e) =>
+                  setCouponForm({ ...couponForm, code: e.target.value.toUpperCase() })
+                }
                 placeholder="VD: SALE20"
                 className="uppercase"
               />
@@ -755,7 +787,9 @@ const MarketingManagement = () => {
                 <Label htmlFor="type">Loại giảm giá</Label>
                 <Select
                   value={couponForm.type}
-                  onValueChange={(value) => setCouponForm({ ...couponForm, type: value as "percent" | "fixed" })}
+                  onValueChange={(value) =>
+                    setCouponForm({ ...couponForm, type: value as 'percent' | 'fixed' })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -773,7 +807,7 @@ const MarketingManagement = () => {
                   type="number"
                   value={couponForm.value}
                   onChange={(e) => setCouponForm({ ...couponForm, value: e.target.value })}
-                  placeholder={couponForm.type === "percent" ? "10" : "100000"}
+                  placeholder={couponForm.type === 'percent' ? '10' : '100000'}
                 />
               </div>
             </div>
@@ -834,7 +868,7 @@ const MarketingManagement = () => {
                 Hủy
               </Button>
               <Button type="submit" className="bg-accent hover:bg-accent/90">
-                {editingCoupon ? "Cập nhật" : "Tạo mới"}
+                {editingCoupon ? 'Cập nhật' : 'Tạo mới'}
               </Button>
             </div>
           </form>

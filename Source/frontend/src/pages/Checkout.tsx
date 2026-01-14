@@ -9,11 +9,11 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
 import { toast } from '@/hooks/use-toast';
-import { formatPrice } from '@/data/products';
-import { 
-  CreditCard, 
-  Truck, 
-  Building2, 
+import { formatPrice } from '@/lib/utils';
+import {
+  CreditCard,
+  Truck,
+  Building2,
   Smartphone,
   Wallet,
   MapPin,
@@ -22,7 +22,7 @@ import {
   Mail,
   ChevronLeft,
   CheckCircle2,
-  Shield
+  Shield,
 } from 'lucide-react';
 
 interface ShippingInfo {
@@ -42,36 +42,36 @@ const paymentMethods = [
     name: 'Thanh toán khi nhận hàng (COD)',
     description: 'Thanh toán bằng tiền mặt khi nhận hàng',
     icon: Truck,
-    color: 'text-green-600'
+    color: 'text-green-600',
   },
   {
     id: 'banking',
     name: 'Internet Banking',
     description: 'Chuyển khoản qua ngân hàng nội địa',
     icon: Building2,
-    color: 'text-blue-600'
+    color: 'text-blue-600',
   },
   {
     id: 'momo',
     name: 'Ví MoMo',
     description: 'Thanh toán qua ví điện tử MoMo',
     icon: Wallet,
-    color: 'text-pink-500'
+    color: 'text-pink-500',
   },
   {
     id: 'zalopay',
     name: 'ZaloPay',
     description: 'Thanh toán qua ví điện tử ZaloPay',
     icon: Smartphone,
-    color: 'text-blue-500'
+    color: 'text-blue-500',
   },
   {
     id: 'credit',
     name: 'Thẻ tín dụng / Ghi nợ',
     description: 'Visa, Mastercard, JCB',
     icon: CreditCard,
-    color: 'text-purple-600'
-  }
+    color: 'text-purple-600',
+  },
 ];
 
 const Checkout = () => {
@@ -87,7 +87,7 @@ const Checkout = () => {
     ward: '',
     district: '',
     city: '',
-    note: ''
+    note: '',
   });
 
   const shippingFee = totalPrice >= 10000000 ? 0 : 50000;
@@ -95,7 +95,7 @@ const Checkout = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setShippingInfo(prev => ({ ...prev, [name]: value }));
+    setShippingInfo((prev) => ({ ...prev, [name]: value }));
   };
 
   const validateForm = () => {
@@ -104,7 +104,11 @@ const Checkout = () => {
       return false;
     }
     if (!shippingInfo.phone.trim() || !/^0\d{9}$/.test(shippingInfo.phone)) {
-      toast({ title: 'Số điện thoại không hợp lệ', description: 'Vui lòng nhập số điện thoại 10 số bắt đầu bằng 0', variant: 'destructive' });
+      toast({
+        title: 'Số điện thoại không hợp lệ',
+        description: 'Vui lòng nhập số điện thoại 10 số bắt đầu bằng 0',
+        variant: 'destructive',
+      });
       return false;
     }
     if (!shippingInfo.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(shippingInfo.email)) {
@@ -128,22 +132,22 @@ const Checkout = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
-    
+
     setIsProcessing(true);
-    
+
     // Simulate payment processing
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
     setIsProcessing(false);
     clearCart();
-    
+
     toast({
       title: 'Đặt hàng thành công!',
       description: 'Cảm ơn bạn đã mua hàng. Chúng tôi sẽ liên hệ sớm nhất.',
     });
-    
+
     navigate('/');
   };
 
@@ -160,9 +164,7 @@ const Checkout = () => {
             <p className="text-muted-foreground mb-8">
               Bạn chưa có sản phẩm nào trong giỏ hàng để thanh toán.
             </p>
-            <Button onClick={() => navigate('/products')}>
-              Tiếp tục mua sắm
-            </Button>
+            <Button onClick={() => navigate('/products')}>Tiếp tục mua sắm</Button>
           </div>
         </main>
         <Footer />
@@ -173,13 +175,9 @@ const Checkout = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+
       <main className="container mx-auto px-4 py-8">
-        <Button 
-          variant="ghost" 
-          onClick={() => navigate('/cart')}
-          className="mb-6 -ml-2"
-        >
+        <Button variant="ghost" onClick={() => navigate('/cart')} className="mb-6 -ml-2">
           <ChevronLeft className="w-4 h-4 mr-1" />
           Quay lại giỏ hàng
         </Button>
@@ -198,7 +196,9 @@ const Checkout = () => {
                   </div>
                   <div>
                     <h2 className="text-xl font-semibold">Thông tin giao hàng</h2>
-                    <p className="text-sm text-muted-foreground">Điền đầy đủ thông tin để nhận hàng</p>
+                    <p className="text-sm text-muted-foreground">
+                      Điền đầy đủ thông tin để nhận hàng
+                    </p>
                   </div>
                 </div>
 
@@ -321,7 +321,11 @@ const Checkout = () => {
                   </div>
                 </div>
 
-                <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="space-y-3">
+                <RadioGroup
+                  value={paymentMethod}
+                  onValueChange={setPaymentMethod}
+                  className="space-y-3"
+                >
                   {paymentMethods.map((method) => (
                     <label
                       key={method.id}
@@ -332,7 +336,9 @@ const Checkout = () => {
                       }`}
                     >
                       <RadioGroupItem value={method.id} id={method.id} />
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center bg-muted ${method.color}`}>
+                      <div
+                        className={`w-12 h-12 rounded-xl flex items-center justify-center bg-muted ${method.color}`}
+                      >
                         <method.icon className="w-6 h-6" />
                       </div>
                       <div className="flex-1">
@@ -349,18 +355,24 @@ const Checkout = () => {
                 {/* Payment specific info */}
                 {paymentMethod === 'banking' && (
                   <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-xl text-sm">
-                    <p className="font-medium text-blue-800 dark:text-blue-200 mb-2">Thông tin chuyển khoản:</p>
+                    <p className="font-medium text-blue-800 dark:text-blue-200 mb-2">
+                      Thông tin chuyển khoản:
+                    </p>
                     <p className="text-blue-700 dark:text-blue-300">Ngân hàng: Vietcombank</p>
                     <p className="text-blue-700 dark:text-blue-300">STK: 1234567890</p>
                     <p className="text-blue-700 dark:text-blue-300">Chủ TK: CONG TY ISTORE</p>
-                    <p className="text-blue-700 dark:text-blue-300 mt-2">Nội dung: [Họ tên] - [SĐT]</p>
+                    <p className="text-blue-700 dark:text-blue-300 mt-2">
+                      Nội dung: [Họ tên] - [SĐT]
+                    </p>
                   </div>
                 )}
 
                 {(paymentMethod === 'momo' || paymentMethod === 'zalopay') && (
                   <div className="mt-4 p-4 bg-pink-50 dark:bg-pink-950/30 rounded-xl text-sm">
                     <p className="text-pink-700 dark:text-pink-300">
-                      Bạn sẽ được chuyển đến ứng dụng {paymentMethod === 'momo' ? 'MoMo' : 'ZaloPay'} để hoàn tất thanh toán sau khi đặt hàng.
+                      Bạn sẽ được chuyển đến ứng dụng{' '}
+                      {paymentMethod === 'momo' ? 'MoMo' : 'ZaloPay'} để hoàn tất thanh toán sau khi
+                      đặt hàng.
                     </p>
                   </div>
                 )}
@@ -379,13 +391,13 @@ const Checkout = () => {
             <div className="lg:col-span-1">
               <div className="bg-card rounded-2xl p-6 border border-border sticky top-24">
                 <h2 className="text-xl font-semibold mb-4">Đơn hàng của bạn</h2>
-                
+
                 <div className="space-y-4 max-h-64 overflow-y-auto mb-4">
                   {items.map((item, index) => (
                     <div key={index} className="flex gap-3">
                       <div className="w-16 h-16 bg-muted rounded-lg overflow-hidden flex-shrink-0">
-                        <img 
-                          src={item.product.images[0]} 
+                        <img
+                          src={item.product.images[0]}
                           alt={item.product.name}
                           className="w-full h-full object-cover"
                         />
@@ -430,16 +442,10 @@ const Checkout = () => {
 
                 <div className="flex justify-between items-center mb-6">
                   <span className="text-lg font-semibold">Tổng cộng</span>
-                  <span className="text-2xl font-bold text-primary">
-                    {formatPrice(finalTotal)}
-                  </span>
+                  <span className="text-2xl font-bold text-primary">{formatPrice(finalTotal)}</span>
                 </div>
 
-                <Button 
-                  type="submit" 
-                  className="w-full h-12 text-base"
-                  disabled={isProcessing}
-                >
+                <Button type="submit" className="w-full h-12 text-base" disabled={isProcessing}>
                   {isProcessing ? (
                     <>
                       <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
