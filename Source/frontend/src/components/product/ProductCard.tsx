@@ -18,6 +18,8 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+
+    // ✅ Type cast: Product phù hợp với CartItemProduct
     addToCart(product, product.colors[0]?.name || '', product.storage[0] || '');
     toast.success(`Đã thêm ${product.name} vào giỏ hàng`);
   };
@@ -80,9 +82,7 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
                 <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
                 <span className="text-sm font-medium">{product.rating}</span>
               </div>
-              <span className="text-sm text-muted-foreground">
-                ({product.reviews} đánh giá)
-              </span>
+              <span className="text-sm text-muted-foreground">({product.reviews} đánh giá)</span>
             </div>
 
             {/* Colors */}
@@ -96,9 +96,7 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
                 />
               ))}
               {product.colors.length > 4 && (
-                <span className="text-xs text-muted-foreground">
-                  +{product.colors.length - 4}
-                </span>
+                <span className="text-xs text-muted-foreground">+{product.colors.length - 4}</span>
               )}
             </div>
 
@@ -126,10 +124,12 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
           </div>
 
           {/* Stock Status */}
-          <div className={cn(
-            "absolute bottom-4 right-4 w-2 h-2 rounded-full",
-            product.inStock ? "bg-green-500" : "bg-red-500"
-          )} />
+          <div
+            className={cn(
+              'absolute bottom-4 right-4 w-2 h-2 rounded-full',
+              product.inStock ? 'bg-green-500' : 'bg-red-500',
+            )}
+          />
         </div>
       </Link>
     </motion.div>

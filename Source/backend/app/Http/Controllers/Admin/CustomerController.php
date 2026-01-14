@@ -8,11 +8,15 @@ use Illuminate\Support\Facades\DB;
 
 class CustomerController extends Controller
 {
+    /**
+     * Danh sách khách hàng
+     */
     public function index()
     {
         $customers = User::query()
             ->where('users.role', 'user')
             ->leftJoin('orders', 'orders.user_id', '=', 'users.id')
+            ->leftJoin('address', 'address.user_id', '=', 'users.id')
             ->select(
                 'users.id',
                 'users.name',
@@ -20,8 +24,12 @@ class CustomerController extends Controller
                 'users.phone',
                 'users.status',
                 'users.role',
-                'users.is_verified',
-                DB::raw('COUNT(orders.id) AS order_count'),
+                'users.email_verified_at',
+
+                // Địa chỉ (lấy 1 địa chỉ đầu tiên)
+                DB::raw('MAX(address.street) AS street'),
+                DB::raw('MAX(address.district) AS district'),
+                DB::raw('COUNT(DISTINCT orders.id) AS orders_count'),
                 DB::raw('COALESCE(SUM(orders.total_amount), 0) AS total_spent'),
                 DB::raw('MAX(orders.created_at) AS last_order_date')
             )
@@ -32,10 +40,32 @@ class CustomerController extends Controller
                 'users.phone',
                 'users.status',
                 'users.role',
-                'users.is_verified'
+                'users.email_verified_at'
             )
             ->orderByDesc('total_spent')
-            ->get();
+            ->get()
+            ->map(function ($customer) {
+                return [
+                    'id' => $customer->id,
+                    'name' => $customer->name,
+                    'email' => $customer->email,
+                    'phone' => $customer->phone,
+                    'status' => $customer->status,
+                    'role' => $customer->role,
+
+                    // ✅ xác thực email
+                    'email_verified_at' => $customer->email_verified_at,
+
+                    // ✅ địa chỉ gộp
+                    'address' => $customer->street
+                        ? $customer->street . ', ' . $customer->district
+                        : 'Chưa cập nhật',
+
+                    'orders_count' => (int) $customer->orders_count,
+                    'total_spent' => (float) $customer->total_spent,
+                    'last_order_date' => $customer->last_order_date,
+                ];
+            });
 
         return response()->json([
             'success' => true,
@@ -43,6 +73,9 @@ class CustomerController extends Controller
         ]);
     }
 
+    /**
+     * Thống kê
+     */
     public function stats()
     {
         return response()->json([
@@ -60,9 +93,20 @@ class CustomerController extends Controller
         ]);
     }
 
+    /**
+     * Chi tiết khách hàng
+     */
     public function show($id)
     {
-        $customer = User::where('role', 'user')->find($id);
+        $customer = User::where('role', 'user')
+            ->leftJoin('addresses', 'addresses.user_id', '=', 'users.id')
+            ->select(
+                'users.*',
+                DB::raw('MAX(addresses.street) AS street'),
+                DB::raw('MAX(addresses.district) AS district')
+            )
+            ->groupBy('users.id')
+            ->find($id);
 
         if (!$customer) {
             return response()->json([
@@ -89,7 +133,15 @@ class CustomerController extends Controller
                 'phone' => $customer->phone,
                 'status' => $customer->status,
                 'role' => $customer->role,
-                'is_verified' => $customer->is_verified,
+
+                // ✅ xác thực email
+                'email_verified_at' => $customer->email_verified_at,
+
+                // ✅ địa chỉ
+                'address' => $customer->street
+                    ? $customer->street . ', ' . $customer->district
+                    : 'Chưa cập nhật',
+
                 'orders_count' => (int) $orderStats->orders_count,
                 'total_spent' => (float) $orderStats->total_spent,
                 'last_order_date' => $orderStats->last_order_date,
@@ -99,6 +151,9 @@ class CustomerController extends Controller
         ]);
     }
 
+    /**
+     * Đơn hàng của khách
+     */
     public function getOrders($id)
     {
         $orders = DB::table('orders')

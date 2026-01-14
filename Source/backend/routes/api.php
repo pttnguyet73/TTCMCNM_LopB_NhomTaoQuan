@@ -3,6 +3,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use Illuminate\Http\Request;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\Admin\CustomerController;
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Admin\CustomerController;  
 use App\Http\Controllers\Admin\CustomerExportController;
 use App\Http\Controllers\OrderController;
@@ -13,6 +15,38 @@ use App\Http\Controllers\CartController;
 use App\Http\Controllers\CouponController;
 use App\Http\Middleware\RoleMiddleware;
 
+Route::middleware(['auth:sanctum', 'admin'])->prefix('product-colors')->group(function () {
+    Route::get('/', [App\Http\Controllers\productColorController::class, 'index']);
+    Route::post('/', [App\Http\Controllers\productColorController::class, 'store']);
+    Route::get('/{id}', [App\Http\Controllers\productColorController::class, 'show']);
+    Route::put('/{id}', [App\Http\Controllers\productColorController::class, 'update']);
+    Route::delete('/{id}', [App\Http\Controllers\productColorController::class, 'destroy']);
+});
+Route::middleware(['auth:sanctum', 'admin'])->prefix('product-specs')->group(function () {
+    Route::get('/', [App\Http\Controllers\ProductSpecController::class, 'index']);
+    Route::post('/', [App\Http\Controllers\ProductSpecController::class, 'store']);
+    Route::get('/{id}', [App\Http\Controllers\ProductSpecController::class, 'show']);
+    Route::put('/{id}', [App\Http\Controllers\ProductSpecController::class, 'update']);
+    Route::delete('/{id}', [App\Http\Controllers\ProductSpecController::class, 'destroy']);
+});
+
+Route::middleware(['auth:sanctum', 'admin'])->prefix('product-images')->group(function () {
+    Route::get('/', [App\Http\Controllers\ProductImageController::class, 'index']);
+    Route::post('/', [App\Http\Controllers\ProductImageController::class, 'store']);
+    Route::get('/{id}', [App\Http\Controllers\ProductImageController::class, 'show']);
+    Route::put('/{id}', [App\Http\Controllers\ProductImageController::class, 'update']);
+    Route::delete('/{id}', [App\Http\Controllers\ProductImageController::class, 'destroy']);
+});
+
+
+Route::middleware(['auth:sanctum', 'admin'])->prefix('product-storages')->group(function () {
+    Route::get('/', [App\Http\Controllers\ProductStorageController::class, 'index']);
+    Route::post('/', [App\Http\Controllers\ProductStorageController::class, 'store']);
+    Route::get('/{id}', [App\Http\Controllers\ProductStorageController::class, 'show']);
+    Route::put('/{id}', [App\Http\Controllers\ProductStorageController::class, 'update']);
+    Route::delete('/{id}', [App\Http\Controllers\ProductStorageController::class, 'destroy']);
+});
+=======
 
 Route::middleware(['auth:sanctum'])->prefix('product-colors')->group(function () {
     Route::get('/', [App\Http\Controllers\productColorController::class, 'index']); 
@@ -47,22 +81,25 @@ Route::middleware(['auth:sanctum'])->prefix('product-images')->group(function ()
 // });
 
 Route::prefix('categories')->group(function () {
-    Route::get('/', [App\Http\Controllers\CategoryController::class, 'index']); 
-    Route::get('/{id}', [App\Http\Controllers\CategoryController::class, 'show']);   
+    Route::get('/', [App\Http\Controllers\CategoryController::class, 'index']);
+    Route::get('/{id}', [App\Http\Controllers\CategoryController::class, 'show']);
 });
 
 Route::prefix('products')->group(function () {
-    Route::get('/', [ProductController::class, 'index']); 
-    Route::get('/{id}', [ProductController::class, 'show']);   
+    Route::get('/', [ProductController::class, 'index']);
+    Route::get('/{id}', [ProductController::class, 'show']);
 });
 
 Route::middleware(['auth:sanctum'])->prefix('categories')->group(function () {
     Route::get('/', [App\Http\Controllers\CategoryController::class, 'index']);
-    Route::post('/', [App\Http\Controllers\CategoryController::class, 'store']);       
-    Route::put('/{id}', [App\Http\Controllers\CategoryController::class, 'update']);  
-    Route::delete('/{id}', [App\Http\Controllers\CategoryController::class, 'destroy']); 
+    Route::post('/', [App\Http\Controllers\CategoryController::class, 'store']);
+    Route::put('/{id}', [App\Http\Controllers\CategoryController::class, 'update']);
+    Route::delete('/{id}', [App\Http\Controllers\CategoryController::class, 'destroy']);
 });
 
+Route::middleware(['auth:sanctum', 'admin'])->prefix('products')->group(function () {
+    Route::post('/', [ProductController::class, 'store']);
+    Route::put('/{id}', [ProductController::class, 'update']);
 Route::middleware(['auth:sanctum'])->prefix('products')->group(function () {
     Route::post('/', [ProductController::class, 'store']);       
     Route::put('/{id}', [ProductController::class, 'update']);  
@@ -86,6 +123,8 @@ Route::get('/reviews/{id}', [App\Http\Controllers\ReviewController::class, 'show
 Route::put('/reviews/{id}', [App\Http\Controllers\ReviewController::class, 'update']);
 Route::delete('/reviews/{id}', [App\Http\Controllers\ReviewController::class, 'destroy']);
 Route::get('/reviews', [App\Http\Controllers\ReviewController::class, 'index']);
+Route::get('/reviews/{productId}', [App\Http\Controllers\ReviewController::class, 'getByProductId']);
+
 
 Route::middleware(['auth:sanctum'])->prefix('cart')->group(function () {
      Route::get('/', [CartController::class, 'index']);
@@ -159,8 +198,8 @@ Route::post('/chat', [ChatController::class, '__invoke']);
 
 Route::middleware(['auth:sanctum'])->prefix('admin')->group(function () {
     Route::get('/users', [AdminUserController::class, 'index']);
-    Route::post('/users', [AdminUserController::class, 'store']); 
+    Route::post('/users', [AdminUserController::class, 'store']);
     Route::put('/users/{id}/status', [AdminUserController::class, 'updateStatus']);
     Route::put('/users/{id}/role', [AdminUserController::class, 'updateRole']);
-    Route::delete('/users/{id}', [AdminUserController::class, 'destroy']); 
+    Route::delete('/users/{id}', [AdminUserController::class, 'destroy']);
 });
