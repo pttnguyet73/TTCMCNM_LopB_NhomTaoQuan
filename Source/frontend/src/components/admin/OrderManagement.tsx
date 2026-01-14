@@ -153,52 +153,48 @@ const OrderManagement = () => {
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
   const { toast } = useToast();
-  const [updatingStatus, setUpdatingStatus] = useState(false);
-  const [newStatus, setNewStatus] = useState<string>('');
-
 
   useEffect(() => {
     const fetchOrders = async () => {
       try {
         setLoading(true);
+
         const res = await orderAPI.getOrders();
 
-        const transformedOrders: Order[] = res.data.map((order: any) => {
-          const rawId = order.raw_id || getRawIdFromFormattedId(order.id) || 0;
+        // 🔥 res CHÍNH LÀ ARRAY
+        if (!Array.isArray(res)) {
+          throw new Error('Dữ liệu đơn hàng không hợp lệ');
+        }
 
-          return {
-            id: order.id || `#ORD-${String(rawId).padStart(3, '0')}`,
-            customer: order.customer || '',
-            email: order.email || '',
-            phone: order.phone || 'Chưa cập nhật',
-            address: order.address || 'Chưa cập nhật',
-            items: order.items || [],
-            subtotal: order.subtotal || '0 đ',
-            subtotal_raw: order.subtotal_raw || 0,
-            discount: order.discount || '0 đ',
-            discount_raw: order.discount_raw || 0,
-            shipping_fee: order.shipping_fee || '0 đ',
-            shipping_fee_raw: order.shipping_fee_raw || 0,
-            total_amount: order.total_amount || '0 đ',
-            total_raw: order.total_raw || 0,
-            coupon_code: order.coupon_code || null,
-            coupon_data: order.coupon_data || null,
-            status: order.status || 'Chờ xác nhận',
-            status_key: order.status_key || order.status || 'Chờ xác nhận',
-            payment_method: order.payment_method || 'COD',
-            created_at: order.created_at
-              ? new Date(order.created_at).toLocaleString('vi-VN', {
-                hour12: false,
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-              })
-              : 'Chưa cập nhật',
-            raw_id: rawId,
-          };
-        });
+        const transformedOrders: Order[] = res.map((order: any) => ({
+          id: `#ORD-${String(order.id).padStart(3, '0')}`,
+          raw_id: order.id,
+
+          customer: order.customer || '',
+          email: '',
+          phone: '',
+          address: '',
+
+          items: [],
+
+          subtotal: '',
+          subtotal_raw: 0,
+          discount: '',
+          discount_raw: 0,
+          shipping_fee: '',
+          shipping_fee_raw: 0,
+
+          total_amount: Number(order.amount).toLocaleString('vi-VN') + ' ₫',
+          total_raw: Number(order.amount),
+
+          coupon_code: null,
+          coupon_data: null,
+
+          status: order.status || 'Chờ xác nhận',
+          status_key: order.status_key || order.status || 'Chờ xác nhận',
+          payment_method: 'COD',
+          created_at: '',
+        }));
 
         setOrders(transformedOrders);
       } catch (error) {
@@ -212,6 +208,7 @@ const OrderManagement = () => {
         setLoading(false);
       }
     };
+
 
     fetchOrders();
   }, [toast]);
@@ -231,7 +228,6 @@ const OrderManagement = () => {
       }
 
       const res = await orderAPI.getOrderDetail(rawId);
-      setNewStatus(res.data.order.status);
 
       if (res.success && res.data) {
         setSelectedOrderDetail(res.data.order);
@@ -754,68 +750,6 @@ const OrderManagement = () => {
                     )}
                   </div>
                 </div>
-                {/* Cập nhật trạng thái đơn hàng */}
-                <div className="border-t border-border pt-4 space-y-3">
-                  <p className="text-sm font-semibold">Cập nhật trạng thái đơn hàng</p>
-
-                  <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-                    <Select
-                      value={newStatus}
-                      onValueChange={setNewStatus}
-                      disabled={
-                        selectedOrderDetail.status === 'Hoàn thành' ||
-                        selectedOrderDetail.status === 'Đã hủy'
-                      }
-                    >
-                      <SelectTrigger className="w-full sm:w-60">
-                        <SelectValue placeholder="Chọn trạng thái" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Chờ xác nhận">Chờ xác nhận</SelectItem>
-                        <SelectItem value="Đã xác nhận">Đã xác nhận</SelectItem>
-                        <SelectItem value="Đang giao">Đang giao</SelectItem>
-                        <SelectItem value="Hoàn thành">Hoàn thành</SelectItem>
-                        <SelectItem value="Đã hủy">Đã hủy</SelectItem>
-                      </SelectContent>
-                    </Select>
-
-                    <Button
-                      onClick={async () => {
-                        if (!selectedOrderDetail || newStatus === selectedOrderDetail.status) return;
-
-                        try {
-                          setUpdatingStatus(true);
-                          await handleUpdateStatus(
-                            {
-                              ...selectedOrderDetail,
-                              raw_id: selectedOrderDetail.raw_id,
-                            } as any,
-                            newStatus,
-                          );
-                        } finally {
-                          setUpdatingStatus(false);
-                        }
-                      }}
-                      disabled={
-                        updatingStatus ||
-                        newStatus === selectedOrderDetail.status ||
-                        selectedOrderDetail.status === 'Hoàn thành' ||
-                        selectedOrderDetail.status === 'Đã hủy'
-                      }
-                    >
-                      {updatingStatus && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                      Cập nhật
-                    </Button>
-                  </div>
-
-                  {(selectedOrderDetail.status === 'Hoàn thành' ||
-                    selectedOrderDetail.status === 'Đã hủy') && (
-                      <p className="text-xs text-muted-foreground">
-                        Đơn hàng đã kết thúc, không thể thay đổi trạng thái
-                      </p>
-                    )}
-                </div>
-
               </div>
             )
           )}

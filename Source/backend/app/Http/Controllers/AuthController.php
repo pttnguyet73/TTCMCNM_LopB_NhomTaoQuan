@@ -183,4 +183,33 @@ class AuthController extends Controller
             'message' => 'Password reset successfully'
         ], 200);
     }
+    public function updateProfile(Request $request)
+{
+
+    $user = Auth::userOrFail();
+
+
+    $validated = $request->validate([
+        'name'   => 'nullable|string|max:255',
+        'phone'  => 'nullable|string|max:50',
+        'avatar' => 'nullable|image|max:5120',
+    ]);
+
+    if ($request->hasFile('avatar')) {
+        $path = $request->file('avatar')->store('profile-photos', 'public');
+        $user->profile_photo_path = $path;
+    }
+
+    if ($request->filled('name')) {
+        $user->name = $validated['name'];
+    }
+
+    if ($request->filled('phone')) {
+        $user->phone = $validated['phone'];
+    }
+
+    $user->save();
+
+    return new UserResource($user);
+}
 }

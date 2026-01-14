@@ -175,7 +175,7 @@ Route::get('/admin/customers/export', [CustomerExportController::class, 'export'
 Route::prefix('admin')->group(function () {
     Route::get('/orders', [OrderController::class, 'index']);
 });
-
+Route::middleware('auth:sanctum')->post('profile', [AuthController::class, 'updateProfile']);
 
 Route::get('/admin/orders/{id}', [OrderController::class, 'show']);
 Route::prefix('admin')->group(function () {

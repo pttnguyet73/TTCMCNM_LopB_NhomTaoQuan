@@ -2,7 +2,7 @@ import api from '@/lib/api';
 
 export const orderAPI = {
   getOrders: async () => {
-    const response = await api.get('/admin/orders');
+    const response = await api.get('/admin/order');
     return response.data;
   },
   getUserOrders: async () => {
