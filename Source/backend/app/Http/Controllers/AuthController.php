@@ -10,10 +10,13 @@ use App\Http\Resources\UserResource;
 use App\Mail\SendCodeVerifyEmail;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 
 class AuthController extends Controller
@@ -158,6 +161,36 @@ class AuthController extends Controller
     {
         return new UserResource(Auth::user());
     }
+
+    public function updateProfile(Request $request)
+{
+    
+    $user = Auth::userOrFail();
+
+   
+    $validated = $request->validate([
+        'name'   => 'nullable|string|max:255',
+        'phone'  => 'nullable|string|max:50',
+        'avatar' => 'nullable|image|max:5120',
+    ]);
+
+    if ($request->hasFile('avatar')) {
+        $path = $request->file('avatar')->store('profile-photos', 'public');
+        $user->profile_photo_path = $path;
+    }
+
+    if ($request->filled('name')) {
+        $user->name = $validated['name'];
+    }
+
+    if ($request->filled('phone')) {
+        $user->phone = $validated['phone'];
+    }
+
+    $user->save();
+
+    return new UserResource($user);
+}
 
     public function logout(Request $request)
     {

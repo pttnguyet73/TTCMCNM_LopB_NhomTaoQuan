@@ -1,6 +1,7 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Camera, Eye, EyeOff, Save, X, User, Mail, Phone, Lock, Upload } from "lucide-react";
+import { Camera, Save, X, User, Mail, Phone, Upload } from "lucide-react";
+import api from '@/lib/api';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,25 +12,18 @@ import { toast } from "@/hooks/use-toast";
 const ProfileSettings = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [avatar, setAvatar] = useState<string | null>(null);
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
-  const [profile, setProfile] = useState({
-    fullName: "Nguyễn Văn A",
-    email: "nguyenvana@gmail.com",
-    phone: "0901234567",
-  });
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-  const [passwords, setPasswords] = useState({
-    current: "",
-    new: "",
-    confirm: "",
+  const [profile, setProfile] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
   });
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setSelectedFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setAvatar(reader.result as string);
@@ -42,52 +36,103 @@ const ProfileSettings = () => {
     setProfile(prev => ({ ...prev, [field]: value }));
   };
 
-  const handlePasswordChange = (field: string, value: string) => {
-    setPasswords(prev => ({ ...prev, [field]: value }));
-  };
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const res = await api.get('profile');
+        const data = res.data.data ?? res.data;
+        const name = data.name ?? data.fullName ?? '';
+        setProfile({ fullName: name, email: data.email ?? '', phone: data.phone ?? '' });
+        const getBackendOrigin = () => {
+          try {
+            return new URL(api.defaults.baseURL).origin;
+          } catch (e) {
+            return '';
+          }
+        };
+        const backendOrigin = getBackendOrigin();
+
+        if (data.profile_photo_url) {
+          let url = String(data.profile_photo_url);
+          if (url.startsWith('http')) {
+            // If backend returned a localhost URL without port (e.g. http://localhost/...),
+            // replace its origin with our api base origin so the port (8000) is included.
+            if (/^https?:\/\/localhost(:\d+)?\//.test(url)) {
+              // replace the origin part
+              try {
+                const parsed = new URL(url);
+                const path = parsed.pathname + parsed.search + parsed.hash;
+                url = `${backendOrigin}${path}`;
+              } catch (e) {
+                // fallback
+                url = url.replace(/^https?:\/\/localhost(:\d+)?/, backendOrigin);
+              }
+            }
+            setAvatar(url);
+          } else {
+            setAvatar(`${backendOrigin}${url}`);
+          }
+        } else if (data.profile_photo_path) {
+          setAvatar(`${backendOrigin}/storage/${data.profile_photo_path}`);
+        }
+      } catch (err) {
+        // ignore
+      }
+    };
+    loadProfile();
+  }, []);
 
   const handleSave = () => {
-    // Validate passwords if user is trying to change them
-    if (passwords.new || passwords.confirm || passwords.current) {
-      if (!passwords.current) {
-        toast({
-          title: "Lỗi",
-          description: "Vui lòng nhập mật khẩu hiện tại",
-          variant: "destructive",
-        });
-        return;
-      }
-      if (passwords.new !== passwords.confirm) {
-        toast({
-          title: "Lỗi",
-          description: "Mật khẩu mới không khớp",
-          variant: "destructive",
-        });
-        return;
-      }
-      if (passwords.new.length < 6) {
-        toast({
-          title: "Lỗi",
-          description: "Mật khẩu mới phải có ít nhất 6 ký tự",
-          variant: "destructive",
-        });
-        return;
-      }
-    }
+    const submit = async () => {
+      try {
+        const form = new FormData();
+        form.append('name', profile.fullName);
+        form.append('phone', profile.phone || '');
+        if (selectedFile) form.append('avatar', selectedFile);
 
-    toast({
-      title: "Thành công",
-      description: "Thông tin đã được cập nhật",
-    });
+        const res = await api.post('profile', form, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        const data = res.data.data ?? res.data;
+        setProfile(prev => ({ ...prev, fullName: data.name ?? prev.fullName }));
+        const getBackendOrigin = () => {
+          try {
+            return new URL(api.defaults.baseURL).origin;
+          } catch (e) {
+            return '';
+          }
+        };
+        const backendOrigin = getBackendOrigin();
+        if (data.profile_photo_url) {
+          let url = String(data.profile_photo_url);
+          if (url.startsWith('http')) {
+            if (/^https?:\/\/localhost(:\d+)?\//.test(url)) {
+              try {
+                const parsed = new URL(url);
+                const path = parsed.pathname + parsed.search + parsed.hash;
+                url = `${backendOrigin}${path}`;
+              } catch (e) {
+                url = url.replace(/^https?:\/\/localhost(:\d+)?/, backendOrigin);
+              }
+            }
+            setAvatar(url);
+          } else {
+            setAvatar(`${backendOrigin}${url}`);
+          }
+        } else if (data.profile_photo_path) {
+          setAvatar(`${backendOrigin}/storage/${data.profile_photo_path}`);
+        }
+        toast({ title: 'Thành công', description: 'Thông tin đã được cập nhật' });
+      } catch (err: any) {
+        toast({ title: 'Lỗi', description: err?.response?.data?.message ?? 'Lỗi khi cập nhật', variant: 'destructive' });
+      }
+    };
+    submit();
   };
 
   const handleCancel = () => {
-    setProfile({
-      fullName: "Nguyễn Văn A",
-      email: "nguyenvana@gmail.com",
-      phone: "0901234567",
-    });
-    setPasswords({ current: "", new: "", confirm: "" });
+    setProfile({ fullName: '', email: '', phone: '' });
+    setSelectedFile(null);
     setAvatar(null);
   };
 
@@ -204,84 +249,7 @@ const ProfileSettings = () => {
         </CardContent>
       </Card>
 
-      {/* Change Password Section */}
-      <Card className="border-border/50 shadow-elegant">
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold flex items-center gap-2">
-            <Lock className="h-5 w-5 text-accent" />
-            Đổi mật khẩu
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="currentPassword">Mật khẩu hiện tại</Label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                id="currentPassword"
-                type={showCurrentPassword ? "text" : "password"}
-                value={passwords.current}
-                onChange={(e) => handlePasswordChange("current", e.target.value)}
-                className="pl-10 pr-10"
-                placeholder="Nhập mật khẩu hiện tại"
-              />
-              <button
-                type="button"
-                onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="newPassword">Mật khẩu mới</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  id="newPassword"
-                  type={showNewPassword ? "text" : "password"}
-                  value={passwords.new}
-                  onChange={(e) => handlePasswordChange("new", e.target.value)}
-                  className="pl-10 pr-10"
-                  placeholder="Nhập mật khẩu mới"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowNewPassword(!showNewPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Xác nhận mật khẩu mới</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  id="confirmPassword"
-                  type={showConfirmPassword ? "text" : "password"}
-                  value={passwords.confirm}
-                  onChange={(e) => handlePasswordChange("confirm", e.target.value)}
-                  className="pl-10 pr-10"
-                  placeholder="Nhập lại mật khẩu mới"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      
 
       {/* Action Buttons */}
       <div className="flex justify-end gap-3">

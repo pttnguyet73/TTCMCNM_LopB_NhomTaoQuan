@@ -151,6 +151,7 @@ Route::post('verify-email', [AuthController::class, 'verifyEmail']);
 Route::post('resend-code', [AuthController::class, 'resendCode']);
 Route::post('reset-password', [AuthController::class, 'resetPassword']);
 Route::get('profile', [AuthController::class, 'getProfile'])->middleware('auth:sanctum');
+Route::middleware('auth:sanctum')->post('profile', [AuthController::class, 'updateProfile']);
 
 Route::middleware(['auth:sanctum', RoleMiddleware::class . ':admin,saler'])->get('/admin', function (Request $request) {
     return response()->json([
