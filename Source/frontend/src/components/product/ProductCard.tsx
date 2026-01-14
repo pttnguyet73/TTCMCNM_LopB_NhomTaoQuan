@@ -1,14 +1,15 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Star, ShoppingBag, Heart } from 'lucide-react';
-import { Product, formatPrice } from '@/data/products';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/contexts/CartContext';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import {  ProductCardItem } from '@/types/products';
+import { formatPrice } from '@/lib/utils';
 
 interface ProductCardProps {
-  product: Product;
+  product: ProductCardItem;
   index?: number;
 }
 
@@ -19,8 +20,28 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
     e.preventDefault();
     e.stopPropagation();
 
-    // ✅ Type cast: Product phù hợp với CartItemProduct
-    addToCart(product, product.colors[0]?.name || '', product.storage[0] || '');
+    const cartProduct = {
+      id: Number(product.id),
+      name: product.name,
+      price: product.price,
+      image: product.image,
+      description: product.description || '',
+      colors: product.colors?.map((color) => ({
+        id: color.id,
+        name: color.name,
+        hex_code: color.hex_code,
+      })),
+      storage: product.storage,
+      category: product.category,
+      rating: product.rating,
+      reviews: product.reviews,
+      isNew: product.isNew,
+      originalPrice: product.originalPrice,
+      inStock: product.inStock,
+    };
+
+    addToCart(cartProduct, product.colors?.[0]?.name || '', product.storage?.[0] || '', 1);
+
     toast.success(`Đã thêm ${product.name} vào giỏ hàng`);
   };
 
@@ -35,18 +56,24 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
           {/* Badges */}
           <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
             {product.isNew && (
-              <span className="px-3 py-1 text-xs font-medium bg-accent text-accent-foreground rounded-full">
+              <span
+                key="badge-new"
+                className="px-3 py-1 text-xs font-medium bg-accent text-accent-foreground rounded-full"
+              >
                 Mới
               </span>
             )}
             {product.originalPrice && (
-              <span className="px-3 py-1 text-xs font-medium bg-destructive text-destructive-foreground rounded-full">
+              <span
+                key="badge-sale"
+                className="px-3 py-1 text-xs font-medium bg-destructive text-destructive-foreground rounded-full"
+              >
                 -{Math.round((1 - product.price / product.originalPrice) * 100)}%
               </span>
             )}
           </div>
 
-          {/* Wishlist Button */}
+          {/* Wishlist */}
           <button
             className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors"
             onClick={(e) => {
@@ -72,6 +99,7 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
             <p className="text-xs text-muted-foreground uppercase tracking-wider">
               {product.category}
             </p>
+
             <h3 className="font-semibold text-foreground text-lg group-hover:text-accent transition-colors line-clamp-1">
               {product.name}
             </h3>
@@ -80,23 +108,27 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1">
                 <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                <span className="text-sm font-medium">{product.rating}</span>
+                <span className="text-sm font-medium">{product.rating || 0}</span>
               </div>
-              <span className="text-sm text-muted-foreground">({product.reviews} đánh giá)</span>
+              <span className="text-sm text-muted-foreground">
+                ({product.reviews || 0} đánh giá)
+              </span>
             </div>
 
             {/* Colors */}
             <div className="flex items-center gap-1.5 py-2">
-              {product.colors.slice(0, 4).map((color) => (
+              {product.colors?.slice(0, 4).map((color) => (
                 <span
-                  key={color.name}
+                  key={`color-${color.id}`}
                   className="w-4 h-4 rounded-full border border-border"
-                  style={{ backgroundColor: color.hex }}
+                  style={{ backgroundColor: color.hex_code }}
                   title={color.name}
                 />
               ))}
-              {product.colors.length > 4 && (
-                <span className="text-xs text-muted-foreground">+{product.colors.length - 4}</span>
+              {product.colors && product.colors.length > 4 && (
+                <span key="color-more" className="text-xs text-muted-foreground">
+                  +{product.colors.length - 4}
+                </span>
               )}
             </div>
 
@@ -117,13 +149,14 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
               variant="apple"
               className="w-full mt-3 opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300"
               onClick={handleAddToCart}
+              disabled={!product.inStock}
             >
               <ShoppingBag className="w-4 h-4" />
               Thêm vào giỏ
             </Button>
           </div>
 
-          {/* Stock Status */}
+          {/* Stock */}
           <div
             className={cn(
               'absolute bottom-4 right-4 w-2 h-2 rounded-full',

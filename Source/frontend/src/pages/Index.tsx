@@ -1,36 +1,54 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Smartphone, Tablet, Laptop, Star, Truck, Shield, Headphones, ChevronLeft, ChevronRight, Gift, Zap, CreditCard } from 'lucide-react';
+import axios from 'axios';
+import {
+  ArrowRight,
+  Smartphone,
+  Tablet,
+  Laptop,
+  Star,
+  Truck,
+  Shield,
+  Headphones,
+  ChevronLeft,
+  ChevronRight,
+  Gift,
+  Zap,
+  CreditCard,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { ProductCard } from '@/components/product/ProductCard';
-import { products, categories, formatPrice } from '@/data/products';
+import { ProductCardItem } from '@/types/products';
 
 const heroSlides = [
   {
     title: 'iPhone 17 Pro',
     subtitle: 'Titanium. Siêu mạnh mẽ.',
     description: 'Chip A19 Pro đột phá. Camera 18MP. Khung Titanium cao cấp.',
-    image: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=1200&auto=format&fit=crop&q=80',
-    link: '/product/iphone-17-pro',
+    image:
+      'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=1200&auto=format&fit=crop&q=80',
+    link: '/product/1',
     color: 'from-slate-900 to-slate-700',
   },
   {
     title: 'iPad Pro M4',
     subtitle: 'Mỏng đến không ngờ.',
     description: 'Chip M4 siêu mạnh. Màn hình Ultra Retina XDR tuyệt đẹp.',
-    image: 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=1200&auto=format&fit=crop&q=80',
-    link: '/product/ipad-pro-m4',
+    image:
+      'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=1200&auto=format&fit=crop&q=80',
+    link: '/product/2',
     color: 'from-slate-800 to-slate-600',
   },
   {
     title: 'MacBook Pro',
     subtitle: 'Chip M3 Pro & M3 Max.',
     description: 'Hiệu năng chuyên nghiệp. Pin cả ngày dài.',
-    image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=1200&auto=format&fit=crop&q=80',
-    link: '/product/macbook-pro-16-m3-max',
+    image:
+      'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=1200&auto=format&fit=crop&q=80',
+    link: '/product/3',
     color: 'from-gray-900 to-gray-700',
   },
 ];
@@ -75,9 +93,83 @@ const promos = [
 
 export default function HomePage() {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [products, setProducts] = useState<ProductCardItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const featuredProducts = products.filter(p => p.isFeatured);
-  const newProducts = products.filter(p => p.isNew);
+  const convertToProductCardItem = (product: any): ProductCardItem => {
+    return {
+      id: product.id,
+      name: product.name,
+      image: product.images?.[0]?.image_url || '',
+      price: product.price,
+      originalPrice: product.original_price,
+      rating: product.rating || 4.5,
+      reviews: product.review_count || 0,
+      category: product.category?.name,
+      colors: product.colors?.map((color: any) => ({
+        id: color.id,
+        name: color.name,
+        hex_code: color.hex_code,
+        hex: color.hex_code,
+      })),
+      storage: [],
+      inStock: true,
+      isNew: Boolean(product.is_new),
+      isFeatured: Boolean(product.is_featured),
+      description: product.description,
+    };
+  };
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await axios.get('http://localhost:8001/api/products');
+        const productsData = response.data.data.map(convertToProductCardItem);
+        setProducts(productsData);
+      } catch (err) {
+        console.error('Failed to fetch products:', err);
+        setError('Không thể tải danh sách sản phẩm');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-4 pt-32 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Đang tải sản phẩm...</p>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-4 pt-32 text-center">
+          <h1 className="text-2xl font-bold text-destructive mb-4">Lỗi tải dữ liệu</h1>
+          <p className="text-muted-foreground mb-6">{error}</p>
+          <Button variant="apple" onClick={() => window.location.reload()}>
+            Thử lại
+          </Button>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  const featuredProducts = products.filter((p) => p.isFeatured).slice(0, 4);
+
+  const newProducts = products.filter((p) => p.isNew).slice(0, 4);
 
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
@@ -96,7 +188,7 @@ export default function HomePage() {
         <section className="relative min-h-screen flex items-center overflow-hidden">
           {/* Background */}
           <div className="absolute inset-0 bg-gradient-hero" />
-          
+
           {/* Slide Content */}
           <div className="container mx-auto px-4 pt-20 relative z-10">
             <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center min-h-[80vh]">
@@ -116,7 +208,7 @@ export default function HomePage() {
                 >
                   ✨ Mới ra mắt
                 </motion.span>
-                
+
                 <motion.h1
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -125,7 +217,7 @@ export default function HomePage() {
                 >
                   {heroSlides[currentSlide].title}
                 </motion.h1>
-                
+
                 <motion.p
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -134,7 +226,7 @@ export default function HomePage() {
                 >
                   {heroSlides[currentSlide].subtitle}
                 </motion.p>
-                
+
                 <motion.p
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -143,7 +235,7 @@ export default function HomePage() {
                 >
                   {heroSlides[currentSlide].description}
                 </motion.p>
-                
+
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -185,12 +277,7 @@ export default function HomePage() {
 
             {/* Slide Navigation */}
             <div className="flex items-center justify-center gap-4 mt-8">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={prevSlide}
-                className="rounded-full"
-              >
+              <Button variant="ghost" size="icon" onClick={prevSlide} className="rounded-full">
                 <ChevronLeft className="w-5 h-5" />
               </Button>
               <div className="flex items-center gap-2">
@@ -206,12 +293,7 @@ export default function HomePage() {
                   />
                 ))}
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={nextSlide}
-                className="rounded-full"
-              >
+              <Button variant="ghost" size="icon" onClick={nextSlide} className="rounded-full">
                 <ChevronRight className="w-5 h-5" />
               </Button>
             </div>
@@ -263,9 +345,27 @@ export default function HomePage() {
 
             <div className="grid md:grid-cols-3 gap-6">
               {[
-                { id: 'iphone', name: 'iPhone', icon: Smartphone, image: 'https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?w=800', desc: 'Điện thoại thông minh' },
-                { id: 'ipad', name: 'iPad', icon: Tablet, image: 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=800', desc: 'Máy tính bảng' },
-                { id: 'mac', name: 'Mac', icon: Laptop, image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800', desc: 'Máy tính xách tay' },
+                {
+                  id: '1',
+                  name: 'iPhone',
+                  icon: Smartphone,
+                  image: 'https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?w=800',
+                  desc: 'Điện thoại thông minh',
+                },
+                {
+                  id: '2',
+                  name: 'iPad',
+                  icon: Tablet,
+                  image: 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=800',
+                  desc: 'Máy tính bảng',
+                },
+                {
+                  id: '3',
+                  name: 'Mac',
+                  icon: Laptop,
+                  image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800',
+                  desc: 'Máy tính xách tay',
+                },
               ].map((category, index) => (
                 <motion.div
                   key={category.id}
@@ -316,7 +416,10 @@ export default function HomePage() {
                     <promo.icon className="w-10 h-10 mb-4" />
                     <h3 className="text-2xl font-bold mb-2">{promo.title}</h3>
                     <p className="opacity-90 mb-4">{promo.description}</p>
-                    <Button variant="hero-secondary" className="bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground border-0">
+                    <Button
+                      variant="hero-secondary"
+                      className="bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground border-0"
+                    >
                       Xem ngay
                     </Button>
                   </div>
@@ -342,21 +445,35 @@ export default function HomePage() {
                 </h2>
                 <p className="text-muted-foreground">
                   Những sản phẩm được yêu thích nhất
+                  {featuredProducts.length === 0 && ' (Hiện chưa có sản phẩm nổi bật)'}
                 </p>
               </div>
-              <Link to="/products">
-                <Button variant="apple-outline">
-                  Xem tất cả
-                  <ArrowRight className="w-4 h-4" />
-                </Button>
-              </Link>
+              {featuredProducts.length > 0 && (
+                <Link to="/products?filter=featured">
+                  <Button variant="apple-outline">
+                    Xem tất cả
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </Link>
+              )}
             </motion.div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {featuredProducts.map((product, index) => (
-                <ProductCard key={product.id} product={product} index={index} />
-              ))}
-            </div>
+            {featuredProducts.length > 0 ? (
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {featuredProducts.map((product, index) => (
+                  <ProductCard key={product.id} product={product} index={index} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 bg-secondary/30 rounded-3xl">
+                <p className="text-muted-foreground">Chưa có sản phẩm nổi bật nào</p>
+                <Link to="/products">
+                  <Button variant="apple-outline" className="mt-4">
+                    Xem tất cả sản phẩm
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
         </section>
 
@@ -375,21 +492,35 @@ export default function HomePage() {
                 </h2>
                 <p className="text-muted-foreground">
                   Cập nhật những sản phẩm mới nhất từ Apple
+                  {newProducts.length === 0 && ' (Hiện chưa có sản phẩm mới)'}
                 </p>
               </div>
-              <Link to="/products?filter=new">
-                <Button variant="apple-outline">
-                  Xem tất cả
-                  <ArrowRight className="w-4 h-4" />
-                </Button>
-              </Link>
+              {newProducts.length > 0 && (
+                <Link to="/products?filter=new">
+                  <Button variant="apple-outline">
+                    Xem tất cả
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </Link>
+              )}
             </motion.div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {newProducts.map((product, index) => (
-                <ProductCard key={product.id} product={product} index={index} />
-              ))}
-            </div>
+            {newProducts.length > 0 ? (
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {newProducts.map((product, index) => (
+                  <ProductCard key={product.id} product={product} index={index} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 bg-secondary/30 rounded-3xl">
+                <p className="text-muted-foreground">Chưa có sản phẩm mới nào</p>
+                <Link to="/products">
+                  <Button variant="apple-outline" className="mt-4">
+                    Xem tất cả sản phẩm
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
         </section>
 
@@ -403,9 +534,7 @@ export default function HomePage() {
               className="bg-gradient-dark rounded-3xl p-8 md:p-16 text-center text-primary-foreground relative overflow-hidden"
             >
               <div className="relative z-10">
-                <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                  Đăng ký nhận ưu đãi
-                </h2>
+                <h2 className="text-3xl md:text-4xl font-bold mb-4">Đăng ký nhận ưu đãi</h2>
                 <p className="text-primary-foreground/80 mb-8 max-w-lg mx-auto">
                   Nhận thông tin về sản phẩm mới và các chương trình khuyến mãi độc quyền
                 </p>

@@ -20,7 +20,7 @@ class ProductController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%$search%")
-                    ->orWhere('description', 'like', "%$search%");
+                  ->orWhere('description', 'like', "%$search%");
             });
         }
 
@@ -41,6 +41,7 @@ class ProductController extends Controller
             }
         }
 
+        // 🔃 Sắp xếp
         switch ($request->sort_by) {
             case 'price-asc':
                 $query->orderBy('price', 'asc');
@@ -52,7 +53,7 @@ class ProductController extends Controller
 
             case 'newest':
                 $query->orderBy('is_new', 'desc')
-                    ->orderBy('created_at', 'desc');
+                      ->orderBy('created_at', 'desc');
                 break;
 
             case 'rating':
@@ -61,7 +62,7 @@ class ProductController extends Controller
 
             default: // featured
                 $query->orderBy('is_featured', 'desc')
-                    ->orderBy('created_at', 'desc');
+                      ->orderBy('created_at', 'desc');
         }
 
         // Trả về tất cả sản phẩm (không phân trang cho frontend filter)
@@ -73,8 +74,6 @@ class ProductController extends Controller
             'message' => 'Products retrieved successfully'
         ]);
     }
-
-
 
 
     public function store(ProductRequest $request)
@@ -124,7 +123,8 @@ class ProductController extends Controller
 
             DB::commit();
 
-            return response()->json($product->load(['images', 'colors', 'specs']), 201);
+            return response()->json($product->load(['images','colors','specs']), 201);
+
         } catch (\Throwable $e) {
             DB::rollBack();
             return response()->json([
@@ -152,72 +152,6 @@ class ProductController extends Controller
             'success' => true,
             'data' => $product
         ]);
-        DB::beginTransaction();
-
-        try {
-            $product = Product::findOrFail($id);
-            $data = $request->validated();
-
-            $product->update([
-                'name'           => $data['name'],
-                'category_id'    => $data['category_id'],
-                'price'          => $data['price'],
-                'original_price' => $data['original_price'],
-                'status'         => $data['status'],
-                'description'    => $data['description'] ?? $product->description,
-                'is_new'         => $data['is_new'] ?? $product->is_new,
-                'is_featured'    => $data['is_featured'] ?? $product->is_featured,
-                'rating'         => $data['rating'] ?? $product->rating,
-                'review_count'   => $data['review_count'] ?? $product->review_count,
-            ]);
-
-            if (isset($data['images'])) {
-                $product->images()->delete();
-
-                foreach ($data['images'] as $index => $image) {
-                    $product->images()->create([
-                        'image_url' => $image['image_url'],
-                        'is_main'   => $image['is_main'] ?? ($index === 0),
-                    ]);
-                }
-            }
-
-            if (isset($data['colors'])) {
-                $product->colors()->delete();
-
-                foreach ($data['colors'] as $color) {
-                    $product->colors()->create([
-                        'name'     => $color['name'],
-                        'hex_code' => $color['hex_code'],
-                    ]);
-                }
-            }
-
-            /* ========= 4️⃣ SPECS (UPSERT) ========= */
-            if (isset($data['specs'])) {
-                $product->specs()->delete();
-
-                foreach ($data['specs'] as $spec) {
-                    $product->specs()->create([
-                        'label' => $spec['label'],
-                        'value' => $spec['value'],
-                    ]);
-                }
-            }
-
-            DB::commit();
-
-            return response()->json(
-                $product->load(['images', 'colors', 'specs']),
-                200
-            );
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            return response()->json([
-                'message' => 'Cập nhật sản phẩm thất bại',
-                'error'   => $e->getMessage(),
-            ], 500);
-        }
     }
 
     public function destroy($id)
@@ -227,6 +161,7 @@ class ProductController extends Controller
         return response()->json(null, 204);
     }
 
+    //viết funtion xóa mềm có tên softDelete update lại trường is_delete thành true
     public function softDelete($id)
     {
         $product = Product::findOrFail($id);

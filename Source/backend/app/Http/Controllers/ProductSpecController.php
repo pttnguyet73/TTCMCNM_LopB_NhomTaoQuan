@@ -1,54 +1,65 @@
 <?php
 
 namespace App\Http\Controllers;
-use App\Models\ProductColor;
-use App\Http\Requests\ProductColorRequest;
 
-class productColorController extends Controller
+use Illuminate\Http\Request;
+use App\Models\ProductSpec;
+use App\Http\Requests\ProductSpecRequest;
+use App\Models\Product;
+
+class ProductSpecController extends Controller
 {
-    //
     public function index()
     {
-        $colors = ProductColor::all();
-        return response()->json($colors);
+        $specs = ProductSpec::all();
+        return response()->json($specs);
     }
 
-    public function store(ProductColorRequest $request)
+    public function store(ProductSpecRequest $request)
     {
         $validated = $request->validated();
 
-        $color = ProductColor::create($validated);
-        return response()->json($color, 201);
+        $spec = ProductSpec::create($validated);
+        return response()->json($spec, 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show($id)
     {
-        $color = ProductColor::findOrFail($id);
-        return response()->json($color);
+        $spec = ProductSpec::findOrFail($id);
+        return response()->json($spec);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(ProductColorRequest $request, $id)
+    public function update(ProductSpecRequest $request, $id)
     {
-        $color = ProductColor::findOrFail($id);
+        $spec = ProductSpec::findOrFail($id);
         $validated = $request->validated();
 
-        $color->update($validated);
-        return response()->json($color);
+        $spec->update($validated);
+        return response()->json($spec);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy($id)
     {
-        $color = ProductColor::findOrFail($id);
-        $color->delete();
-        return response()->json(['message' => 'Xóa màu sản phẩm thành công']);
+        $spec = ProductSpec::findOrFail($id);
+        $spec->delete();
+        return response()->json(['message' => 'Xóa thông số sản phẩm thành công']);
+    }
+
+    public function getByProductId($productId)
+    {
+        $specs = ProductSpec::where('product_id', $productId)->get();
+        return response()->json($specs);
+    }
+
+    public function getByProduct(Request $request)
+    {
+        $productId = $request->query('product_id');
+
+        if (!$productId) {
+            return response()->json(['error' => 'Thiếu tham số product_id'], 400);
+        }
+
+        $specs = ProductSpec::where('product_id', $productId)->get();
+        return response()->json($specs);
     }
 }

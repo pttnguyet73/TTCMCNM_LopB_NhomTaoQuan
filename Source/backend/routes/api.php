@@ -13,6 +13,7 @@ use App\Http\Controllers\CartController;
 use App\Http\Controllers\CouponController;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Controllers\ProductSpecController; 
+use App\Http\Controllers\Admin\AdminProductController;
 
 Route::middleware(['auth:sanctum', 'admin'])->prefix('product-colors')->group(function () {
     Route::get('/', [App\Http\Controllers\ProductColorController::class, 'index']);
@@ -56,10 +57,10 @@ Route::prefix('categories')->group(function () {
     Route::get('/{id}', [App\Http\Controllers\CategoryController::class, 'show']);
 });
 
-Route::prefix('products')->group(function () {
-    Route::get('/', [ProductController::class, 'index']);
-    Route::get('/{id}', [ProductController::class, 'show']);
-});
+// Route::prefix('products')->group(function () {
+//     Route::get('/', [ProductController::class, 'index']);
+//     Route::get('/{id}', [ProductController::class, 'show']);
+// });
 
 Route::middleware(['auth:sanctum'])->prefix('categories')->group(function () {
     Route::get('/', [App\Http\Controllers\CategoryController::class, 'index']);
@@ -68,13 +69,24 @@ Route::middleware(['auth:sanctum'])->prefix('categories')->group(function () {
     Route::delete('/{id}', [App\Http\Controllers\CategoryController::class, 'destroy']);
 });
 
-Route::middleware(['auth:sanctum', 'admin'])->prefix('products')->group(function () {
-    Route::post('/', [ProductController::class, 'store']);
-    Route::put('/{id}', [ProductController::class, 'update']);
+// Route::middleware(['auth:sanctum', 'admin'])->prefix('admin/products')->group(function () {
+//     Route::post('/', [AdminProductController::class, 'store']);
+//     Route::put('/{id}', [AdminProductController::class, 'update']);
+//     Route::delete('/{id}', [AdminProductController::class, 'destroy']);
+//     route::get('/', [AdminProductController::class, 'index']);
+// });
+
+Route::prefix('admin/products')->group(function () {
+    Route::get('/', [AdminProductController::class, 'index']); 
+    Route::get('/{id}', [AdminProductController::class, 'show']);   
+    Route::post('/', [AdminProductController::class, 'store']);       
+    Route::put('/{id}', [AdminProductController::class, 'update']);  
+    Route::delete('/{id}', [AdminProductController::class, 'destroy']);
 });
-Route::middleware(['auth:sanctum'])->prefix('products')->group(function () {
+Route::prefix('products')->group(function () {
+    Route::get('/', [ProductController::class, 'index']);
+    Route::get('/{id}', [ProductController::class, 'show']);
     Route::post('/', [ProductController::class, 'store']);       
-    Route::put('/{id}', [ProductController::class, 'update']);  
     Route::delete('/{id}', [ProductController::class, 'destroy']);
 });
 

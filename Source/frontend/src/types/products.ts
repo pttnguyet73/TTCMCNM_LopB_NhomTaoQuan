@@ -71,7 +71,27 @@ export interface ProductPayload {
   stock?: number;
   category_id: number;
 }
-
+export interface ProductCardItem {
+  id: number;
+  name: string;
+  image: string;
+  price: number;
+  originalPrice?: number;
+  rating?: number;
+  reviews?: number;
+  category?: string;
+  colors?: Array<{
+    id?: number;
+    name: string;
+    hex_code?: string;
+    hex?: string;
+  }>;
+  storage?: string[];
+  inStock?: boolean;
+  isNew?: boolean;
+  description?: string;
+  isFeatured?: boolean;
+}
 export interface CartItemProduct {
   id: number;
   name: string;
