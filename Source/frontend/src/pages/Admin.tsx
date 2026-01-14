@@ -39,7 +39,7 @@ const menuItems = [
   { id: "settings", label: "Cài đặt", icon: Settings },
 ];
 
-const Saler = () => {
+const Admin = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const { user, logout } = useAuth();
@@ -48,7 +48,7 @@ const Saler = () => {
 
   const filteredMenuItems = menuItems.filter((item) => {
   if (user.role === "admin") {
-    return true; 
+    return item.id === "users";
   }
   if (user.role === "saler") {
     return item.id !== "users";
@@ -205,4 +205,4 @@ const Saler = () => {
   );
 };
 
-export default Saler;
+export default Admin;
