@@ -14,7 +14,7 @@ return new class extends Migration
         if (!Schema::hasTable('product_color')) {
             Schema::create('product_color', function (Blueprint $table) {
                 $table->id();
-                $table->foreignId('product_id')->constrained('products')->onDelete('cascade')->onUpdate('cascade');
+                $table->foreignId('product_id')->constrained('product')->onDelete('cascade')->onUpdate('cascade');
                 $table->string('name');    
                 $table->string('hex_code');      
                 $table->timestamps();

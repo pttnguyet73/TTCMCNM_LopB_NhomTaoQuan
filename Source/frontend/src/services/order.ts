@@ -15,6 +15,16 @@ export const orderAPI = {
     return response.data;
   },
 
+  getUserOrders: async () => {
+    const response = await api.get('/orders');
+    return response.data;
+  },
+
+  getOrderDetailPublic: async (id: number) => {
+    const response = await api.get(`/orders/${id}`);
+    return response.data;
+  },
+
   getOrderDetail: async (id: number) => {
     const response = await api.get(`/admin/orders/${id}`);
     return response.data;
