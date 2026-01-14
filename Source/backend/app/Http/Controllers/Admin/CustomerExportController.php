@@ -29,7 +29,6 @@ class CustomerExportController extends Controller
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
-        // Header
         $headers = [
             'A1' => 'ID',
             'B1' => 'Tên',

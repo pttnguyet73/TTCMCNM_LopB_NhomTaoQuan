@@ -28,16 +28,20 @@ class ProductRequest extends FormRequest
             'original_price' => 'nullable|numeric|min:0',
             'status' => 'required|integer|min:0',
             'category_id' => 'required|exists:category,id',
-            'is_featured' => 'required|boolean',
-            'is_new' => 'required|boolean',
+            'is_featured' => 'nullable|boolean',
+            'is_new' => 'nullable|boolean',
             'rating' => 'nullable|numeric|min:0|max:5',
             'review_count' => 'nullable|integer|min:0',
             'seo_title' => 'nullable|string|max:255',
             'seo_description' => 'nullable|string|max:255',
+            // Optional: images array
+            'images' => 'nullable|array',
+            'images.*.image_url' => 'required|string',
+            'images.*.is_main' => 'nullable|boolean',
             // Optional: colors array
             'colors' => 'nullable|array',
             'colors.*.name' => 'string|max:255',
-            'colors.*.hex' => 'string|regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/',
+            'colors.*.hex_code' => 'string|max:7',
             // Optional: specs array
             'specs' => 'nullable|array',
             'specs.*.label' => 'string|max:255',
@@ -47,4 +51,15 @@ class ProductRequest extends FormRequest
             'storage.*' => 'string|max:255',
         ];
     }
+
+    protected function failedValidation(\Illuminate\Contracts\Validation\Validator $validator)
+{
+    throw new \Illuminate\Validation\ValidationException(
+        $validator,
+        response()->json([
+            'errors' => $validator->errors()
+        ], 422)
+    );
+}
+
 }

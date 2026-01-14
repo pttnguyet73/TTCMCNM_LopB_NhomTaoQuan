@@ -1,4 +1,3 @@
-
 import { motion } from "framer-motion";
 import {
   LayoutDashboard,
@@ -25,10 +24,8 @@ import CustomerManagement from "@/components/admin/CustomerManagement";
 import ContentManagement from "@/components/admin/ContentManagement";
 import MarketingManagement from "@/components/admin/MarketingManagement";
 import UserManagement from "@/components/admin/UserManagement";
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import api from "@/lib/api";
-
+import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const menuItems = [
   { id: "overview", label: "Tổng quan", icon: LayoutDashboard },
@@ -43,12 +40,33 @@ const menuItems = [
 ];
 
 const Admin = () => {
-  
   const [activeTab, setActiveTab] = useState("overview");
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  
+  const { user, logout } = useAuth();
 
+  if (!user) return null; 
+
+  const filteredMenuItems = menuItems.filter((item) => {
+  if (user.role === "admin") {
+    return item.id === "users";
+  }
+  if (user.role === "saler") {
+    return item.id !== "users";
+  }
+
+  return false;
+});
+
+  // Render content theo activeTab + role
   const renderContent = () => {
+    if (activeTab === "users" && user.role !== "admin") {
+      return (
+        <div className="flex items-center justify-center h-full">
+          <p className="text-destructive">Bạn không có quyền truy cập trang này.</p>
+        </div>
+      );
+    }
+
     switch (activeTab) {
       case "overview":
         return <DashboardOverview />;
@@ -111,7 +129,7 @@ const Admin = () => {
 
         {/* Menu */}
         <nav className="flex-1 p-4 space-y-2">
-          {menuItems.map((item) => {
+          {filteredMenuItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
             return (
@@ -135,9 +153,7 @@ const Admin = () => {
                     {item.label}
                   </motion.span>
                 )}
-                {sidebarOpen && isActive && (
-                  <ChevronRight className="h-4 w-4" />
-                )}
+                {sidebarOpen && isActive && <ChevronRight className="h-4 w-4" />}
               </button>
             );
           })}
@@ -146,13 +162,11 @@ const Admin = () => {
         {/* Footer */}
         <div className="p-4 border-t border-border">
           <button
-            onClick={() => window.location.href = "/"}
+            onClick={logout}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
           >
             <LogOut className="h-5 w-5 shrink-0" />
-            {sidebarOpen && (
-              <span className="font-medium">Đăng xuất</span>
-            )}
+            {sidebarOpen && <span className="font-medium">Đăng xuất</span>}
           </button>
         </div>
       </motion.aside>
@@ -163,16 +177,15 @@ const Admin = () => {
         <header className="h-16 bg-card border-b border-border flex items-center justify-between px-6 sticky top-0 z-10">
           <div>
             <h1 className="text-xl font-semibold">
-              {menuItems.find((item) => item.id === activeTab)?.label || "Dashboard"}
+              {filteredMenuItems.find((item) => item.id === activeTab)?.label || "Dashboard"}
             </h1>
-            <p className="text-sm text-muted-foreground">
-              Quản lý cửa hàng của bạn
-            </p>
+            <p className="text-sm text-muted-foreground">Quản lý cửa hàng của bạn</p>
           </div>
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-              <span className="text-sm font-medium">AD</span>
+            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center font-medium">
+              {user?.name ? user.name.charAt(0).toUpperCase() : "A"}
             </div>
+            <span className="hidden md:block font-medium">{user?.name || "Admin"}</span>
           </div>
         </header>
 

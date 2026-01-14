@@ -138,6 +138,8 @@ export const formatDate = (dateString: string | null | undefined): string => {
       day: '2-digit',
     });
   } catch (error) {
-    return dateString || 'Chưa có';
+
+    return dateString || "Chưa cập nhật";
+
   }
 };

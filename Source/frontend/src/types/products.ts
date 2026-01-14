@@ -1,3 +1,4 @@
+
 // src/types/product.ts
 
 export interface Category {
@@ -53,11 +54,21 @@ export interface Product {
   }>;
   storage_options?: string[];
   specifications?: Record<string, string>;
+  sale_price?: number | null;
+  stock?: number;
+  category_id: number;
+
+
+  category?: Category;
+  images?: ProductImage[];
+  colors?: ProductColor[];
+
   created_at?: string;
   updated_at?: string;
 }
 
-// For API payload
+
+// Dùng khi tạo / cập nhật sản phẩm (POST, PUT)
 export interface ProductPayload {
   name: string;
   description?: string;

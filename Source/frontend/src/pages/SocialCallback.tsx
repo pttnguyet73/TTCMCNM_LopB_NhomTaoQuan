@@ -1,33 +1,32 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
-const Callback = () => {
+const SocialCallback = () => {
   const navigate = useNavigate();
+  const { loginWithToken } = useAuth();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-
     const token = params.get('token');
-    const role = params.get('role');
-    const userId = params.get('id');
 
-    if (!token || !role) {
+    if (!token) {
       navigate('/login');
       return;
     }
 
-    localStorage.setItem('access_token', token);
-    localStorage.setItem('role', role);
-    localStorage.setItem('user_id', userId || '');
-
-    if (role === 'admin') {
-      navigate('/admin', { replace: true });
-    } else {
-      navigate('/', { replace: true });
-    }
-  }, [navigate]);
+    loginWithToken(token)
+      .then(user => {
+        if (user.role === 'admin' || user.role === 'saler') {
+          navigate('/admin', { replace: true });
+        } else {
+          navigate('/', { replace: true });
+        }
+      })
+      .catch(() => navigate('/login'));
+  }, [navigate, loginWithToken]);
 
   return <p>Đang đăng nhập...</p>;
 };
 
-export default Callback;
+export default SocialCallback;
