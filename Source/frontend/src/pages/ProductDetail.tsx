@@ -368,14 +368,14 @@ export default function ProductDetailPage() {
       comment: newComment,
     });
 
-    toast.success('Đánh giá của bạn đã được gửi và chờ duyệt');
+    toast.success('Bình luận của bạn đã được gửi.');
 
     // Reset form
     setNewRating(5);
     setNewComment('');
   } catch (error) {
     console.error(error);
-    toast.error('Không thể gửi đánh giá');
+    toast.error('Không thể gửi bình luận khi chưa đăng nhập tài khoản. Vui lòng đăng nhập và thử lại.');
   } finally {
     setSubmittingReview(false);
   }
