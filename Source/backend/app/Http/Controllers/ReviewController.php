@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Review;
 use App\Models\User;
 use App\Http\Requests\ReviewRequest;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ReviewController extends Controller
 {
@@ -23,12 +25,28 @@ class ReviewController extends Controller
         return response()->json($reviews);
     }
 
-    public function store(ReviewRequest $request)
+     public function store(Request $request)
     {
-        $validated = $request->validated();
-        $review = Review::create($validated);
+    $userId = Auth::id();
+        $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'rating'     => 'required|integer|min:1|max:5',
+            'comment'    => 'required|string|max:1000',
+        ]);
 
-        return response()->json($review, 201);
+        $review = Review::create([
+            'product_id' => $request->product_id,
+            'user_id'    => $userId,
+            'rating'     => $request->rating,
+            'comment'    => $request->comment,
+            'status'     => 'approved', 
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Đã gửi đánh giá',
+            'data'    => $review,
+        ], 201);
     }
 
     public function show($id)

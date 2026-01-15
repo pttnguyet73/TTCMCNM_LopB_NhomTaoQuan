@@ -14,6 +14,7 @@ use App\Http\Controllers\CouponController;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Controllers\ProductSpecController; 
 use App\Http\Controllers\Admin\AdminProductController;
+use App\Http\Controllers\ReviewController;
 
 Route::middleware(['auth:sanctum', 'admin'])->prefix('product-colors')->group(function () {
     Route::get('/', [App\Http\Controllers\ProductColorController::class, 'index']);
@@ -192,4 +193,8 @@ Route::middleware(['auth:sanctum'])->prefix('admin')->group(function () {
     Route::put('/users/{id}/status', [AdminUserController::class, 'updateStatus']);
     Route::put('/users/{id}/role', [AdminUserController::class, 'updateRole']);
     Route::delete('/users/{id}', [AdminUserController::class, 'destroy']);
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/reviews', [ReviewController::class, 'store']);
 });

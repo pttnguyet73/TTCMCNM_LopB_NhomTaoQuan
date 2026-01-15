@@ -106,6 +106,9 @@ export default function ProductDetailPage() {
   const [loadingSpecs, setLoadingSpecs] = useState(false);
   const [showAllReviews, setShowAllReviews] = useState(false);
   const [visibleReviewCount, setVisibleReviewCount] = useState(3);
+  const [newRating, setNewRating] = useState(5);
+  const [newComment, setNewComment] = useState('');
+  const [submittingReview, setSubmittingReview] = useState(false);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -348,6 +351,37 @@ export default function ProductDetailPage() {
     fetchSpecifications();
   }, [product?.id, product?.specifications, selectedStorage]);
 
+ const handleSubmitReview = async () => {
+  if (!product?.id) return;
+
+  if (!newComment.trim()) {
+    toast.error('Vui lòng nhập nội dung đánh giá');
+    return;
+  }
+
+  try {
+    setSubmittingReview(true);
+
+    await api.post('reviews', {
+      product_id: product.id,
+      rating: newRating,
+      comment: newComment,
+    });
+
+    toast.success('Đánh giá của bạn đã được gửi và chờ duyệt');
+
+    // Reset form
+    setNewRating(5);
+    setNewComment('');
+  } catch (error) {
+    console.error(error);
+    toast.error('Không thể gửi đánh giá');
+  } finally {
+    setSubmittingReview(false);
+  }
+};
+
+
   useEffect(() => {
     if (!product?.id) return;
 
@@ -583,7 +617,7 @@ export default function ProductDetailPage() {
   };
 
   const handleBuyNow = () => {
-    addToCart(product.id, selectedColor,  quantity);
+    addToCart(product.id, selectedColor, quantity);
     navigate('/checkout');
   };
 
@@ -712,7 +746,7 @@ export default function ProductDetailPage() {
                   ))}
                   <span className="ml-2 font-medium">{productRating.toFixed(1)}</span>
                 </div>
-                <span className="text-muted-foreground">({reviewCount} đánh giá)</span>
+                <span className="text-muted-foreground">({reviewCount}  Bình luận )</span>
               </div>
 
               <div className="flex items-end gap-4 mb-8">
@@ -859,12 +893,13 @@ export default function ProductDetailPage() {
             </motion.div>
           </div>
 
+
           <div className="mb-16">
             <div className="flex items-center gap-2 border-b border-border mb-8 overflow-x-auto">
               {[
                 { id: 'specs', label: 'Thông số kỹ thuật' },
                 { id: 'description', label: 'Mô tả' },
-                { id: 'reviews', label: `Đánh giá (${reviewCount})` },
+                { id: 'reviews', label: `Bình luận (${reviewCount})` },
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -939,14 +974,35 @@ export default function ProductDetailPage() {
                 animate={{ opacity: 1, y: 0 }}
                 className="space-y-6"
               >
+                <div className="p-6 bg-secondary/50 rounded-2xl space-y-4">
+                  <h3 className="text-lg font-semibold">Viết bình luận của bạn</h3>
+                  {/* Comment */}
+                  <textarea
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    placeholder="Chia sẻ cảm nhận của bạn về sản phẩm..."
+                    className="w-full min-h-[100px] rounded-xl border border-border bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+                  />
+
+                  <Button
+                    variant="hero"
+                    onClick={handleSubmitReview}
+                    disabled={submittingReview}
+                  >
+                    {submittingReview ? 'Đang gửi...' : 'Gửi bình luận'}
+                  </Button>
+                </div>
+
                 {loadingReviews ? (
+
                   <div className="text-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto"></div>
-                    <p className="mt-2 text-sm text-muted-foreground">Đang tải đánh giá...</p>
+                    <p className="mt-2 text-sm text-muted-foreground">Đang tải bình luận...</p>
                   </div>
                 ) : displayedReviews.length > 0 ? (
                   <>
                     {displayedReviews.map((review) => (
+
                       <div key={review.id} className="p-6 bg-secondary/50 rounded-2xl">
                         <div className="flex items-start gap-4">
                           <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300 flex-shrink-0">
@@ -967,19 +1023,6 @@ export default function ProductDetailPage() {
                               <h4 className="font-semibold text-foreground">{review.author}</h4>
                               <span className="text-sm text-muted-foreground">{review.date}</span>
                             </div>
-                            <div className="flex items-center gap-1 mb-3">
-                              {[...Array(5)].map((_, i) => (
-                                <Star
-                                  key={i}
-                                  className={cn(
-                                    'w-4 h-4',
-                                    i < review.rating
-                                      ? 'fill-amber-400 text-amber-400'
-                                      : 'text-muted-foreground',
-                                  )}
-                                />
-                              ))}
-                            </div>
                             <p className="text-muted-foreground">{review.content}</p>
                           </div>
                         </div>
@@ -993,14 +1036,14 @@ export default function ProductDetailPage() {
                         onClick={handleShowMoreReviews}
                       >
                         {showAllReviews
-                          ? 'Thu gọn đánh giá'
-                          : `Xem thêm đánh giá (${reviews.length - displayedReviews.length})`}
+                          ? 'Thu gọn bình luận'
+                          : `Xem thêm bình luận (${reviews.length - displayedReviews.length})`}
                       </Button>
                     )}
                   </>
                 ) : (
                   <div className="text-center py-12 bg-secondary/30 rounded-3xl">
-                    <p className="text-muted-foreground">Chưa có đánh giá nào cho sản phẩm này</p>
+                    <p className="text-muted-foreground">Chưa có bình luận nào cho sản phẩm này</p>
                   </div>
                 )}
               </motion.div>

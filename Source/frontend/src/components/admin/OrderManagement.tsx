@@ -184,7 +184,7 @@ const OrderManagement = () => {
           shipping_fee: '',
           shipping_fee_raw: 0,
 
-          total_amount: Number(order.amount).toLocaleString('vi-VN') + ' ₫',
+          total_amount: Number(order.total_amount).toLocaleString('vi-VN') + ' ₫',
           total_raw: Number(order.amount),
 
           coupon_code: null,
