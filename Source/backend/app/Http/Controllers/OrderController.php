@@ -53,7 +53,7 @@ class OrderController extends Controller
                 'total_amount' => $data['total_amount'],
                 'shipping_fee' => $data['shipping_fee'] ?? 0,
                     'coupon_code' => $data['coupon_code'] ?? null,
-                'status' => 'chờ xác nhận',
+                'status' => 'Chờ xác nhận',
             ]);
 
             /** 4. Tạo order items */

@@ -466,9 +466,8 @@ const CustomerManagement = () => {
                         </TableCell>
                         <TableCell className="py-4">
                           <span
-                            className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full ${
-                              statusConfig[customer.status].color
-                            }`}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full ${statusConfig[customer.status].color
+                              }`}
                           >
                             {customer.status === 'vip' && <Star className="h-3 w-3" />}
                             {statusConfig[customer.status].label}
@@ -560,11 +559,12 @@ const CustomerManagement = () => {
                     </div>
                     <div>
                       <span className="text-muted-foreground">Xác thực: </span>
-                      <Badge variant={selectedCustomer.email_verified_at ? 'outline' : 'secondary'}>
-                        {selectedCustomer.email_verified_at
+                      <Badge variant={selectedCustomer.is_verified === 1 ? 'outline' : 'secondary'}>
+                        {selectedCustomer.is_verified === 1
                           ? 'Đã xác thực email'
                           : 'Chưa xác thực email'}
                       </Badge>
+
                     </div>
                   </div>
                 </div>
@@ -650,8 +650,8 @@ const CustomerManagement = () => {
                   <p className="text-lg font-bold text-primary">
                     {selectedCustomer.orders_count && selectedCustomer.orders_count > 0
                       ? formatPrice(
-                          (selectedCustomer.total_spent || 0) / selectedCustomer.orders_count,
-                        )
+                        (selectedCustomer.total_spent || 0) / selectedCustomer.orders_count,
+                      )
                       : formatPrice(0)}
                   </p>
                   <p className="text-sm text-muted-foreground">TB/đơn</p>

@@ -1,6 +1,8 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import logo from "@/assets/logo.png";
+
 import {
   Search,
   ShoppingBag,
@@ -258,11 +260,14 @@ export function Header() {
           <div className="flex items-center justify-between h-16 md:h-20">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-gradient-accent flex items-center justify-center">
-                <span className="text-accent-foreground font-bold text-lg"></span>
-              </div>
-              <span className="text-xl font-bold text-foreground">iStore</span>
+              <img
+                src={logo}
+                alt="Táo Quân Store logo"
+                className="w-8 h-8 rounded-xl object-cover"
+              />
+              <span className="text-xl font-bold text-foreground">Táo Quân Store</span>
             </Link>
+
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-1">
@@ -483,8 +488,8 @@ export function Header() {
                                   {product.category === 'iphone'
                                     ? 'IPHONE'
                                     : product.category === 'ipad'
-                                    ? 'IPAD'
-                                    : 'MAC'}
+                                      ? 'IPAD'
+                                      : 'MAC'}
                                 </h4>
                               </div>
 
