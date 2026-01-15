@@ -15,8 +15,11 @@ return Application::configure(basePath: dirname(__DIR__))
        
     )
     ->withMiddleware(function (Middleware $middleware): void {
+         $middleware->use([
+            \Illuminate\Http\Middleware\HandleCors::class,
+        ]);
+        
         $middleware->alias([
-            'cors' => \App\Http\Middleware\Cors::class,
             'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
            'saler' => \App\Http\Middleware\EnsureUserIsSaler::class,
         ]);

@@ -158,44 +158,43 @@ const OrderManagement = () => {
     const fetchOrders = async () => {
       try {
         setLoading(true);
+
         const res = await orderAPI.getOrders();
 
-        const transformedOrders: Order[] = res.data.map((order: any) => {
-          const rawId = order.raw_id || getRawIdFromFormattedId(order.id) || 0;
+        // 🔥 res CHÍNH LÀ ARRAY
+        if (!Array.isArray(res)) {
+          throw new Error('Dữ liệu đơn hàng không hợp lệ');
+        }
 
-          return {
-            id: order.id || `#ORD-${String(rawId).padStart(3, '0')}`,
-            customer: order.customer || '',
-            email: order.email || '',
-            phone: order.phone || 'Chưa cập nhật',
-            address: order.address || 'Chưa cập nhật',
-            items: order.items || [],
-            subtotal: order.subtotal || '0 đ',
-            subtotal_raw: order.subtotal_raw || 0,
-            discount: order.discount || '0 đ',
-            discount_raw: order.discount_raw || 0,
-            shipping_fee: order.shipping_fee || '0 đ',
-            shipping_fee_raw: order.shipping_fee_raw || 0,
-            total_amount: order.total_amount || '0 đ',
-            total_raw: order.total_raw || 0,
-            coupon_code: order.coupon_code || null,
-            coupon_data: order.coupon_data || null,
-            status: order.status || 'Chờ xác nhận',
-            status_key: order.status_key || order.status || 'Chờ xác nhận',
-            payment_method: order.payment_method || 'COD',
-            created_at: order.created_at
-              ? new Date(order.created_at).toLocaleString('vi-VN', {
-                  hour12: false,
-                  day: '2-digit',
-                  month: '2-digit',
-                  year: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })
-              : 'Chưa cập nhật',
-            raw_id: rawId,
-          };
-        });
+        const transformedOrders: Order[] = res.map((order: any) => ({
+          id: `#ORD-${String(order.id).padStart(3, '0')}`,
+          raw_id: order.id,
+
+          customer: order.customer || '',
+          email: '',
+          phone: '',
+          address: '',
+
+          items: [],
+
+          subtotal: '',
+          subtotal_raw: 0,
+          discount: '',
+          discount_raw: 0,
+          shipping_fee: '',
+          shipping_fee_raw: 0,
+
+          total_amount: Number(order.total_amount).toLocaleString('vi-VN') + ' ₫',
+          total_raw: Number(order.amount),
+
+          coupon_code: null,
+          coupon_data: null,
+
+          status: order.status || 'Chờ xác nhận',
+          status_key: order.status_key || order.status || 'Chờ xác nhận',
+          payment_method: 'COD',
+          created_at: '',
+        }));
 
         setOrders(transformedOrders);
       } catch (error) {
@@ -209,6 +208,7 @@ const OrderManagement = () => {
         setLoading(false);
       }
     };
+
 
     fetchOrders();
   }, [toast]);
@@ -270,10 +270,10 @@ const OrderManagement = () => {
         prev.map((o) =>
           o.id === order.id
             ? {
-                ...o,
-                status: newStatus,
-                status_key: newStatus,
-              }
+              ...o,
+              status: newStatus,
+              status_key: newStatus,
+            }
             : o,
         ),
       );
@@ -282,10 +282,10 @@ const OrderManagement = () => {
         setSelectedOrderDetail((prev) =>
           prev
             ? {
-                ...prev,
-                status: newStatus,
-                status_key: newStatus,
-              }
+              ...prev,
+              status: newStatus,
+              status_key: newStatus,
+            }
             : null,
         );
       }
@@ -479,9 +479,8 @@ const OrderManagement = () => {
                           <td className="py-3 px-4 text-sm">{order.payment_method}</td>
                           <td className="py-3 px-4">
                             <span
-                              className={`inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-full ${
-                                statusConfigItem?.color || 'bg-gray-100 text-gray-700'
-                              }`}
+                              className={`inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-full ${statusConfigItem?.color || 'bg-gray-100 text-gray-700'
+                                }`}
                             >
                               <StatusIcon className="h-3 w-3" />
                               {order.status}
@@ -628,22 +627,20 @@ const OrderManagement = () => {
                   {selectedOrderDetail.coupon_code && (
                     <>
                       <div
-                        className={`p-3 rounded-lg ${
-                          selectedOrderDetail.coupon_data?.warning ||
-                          selectedOrderDetail.coupon_data?.error
+                        className={`p-3 rounded-lg ${selectedOrderDetail.coupon_data?.warning ||
+                            selectedOrderDetail.coupon_data?.error
                             ? 'bg-red-50 border border-red-200'
                             : 'bg-amber-50 border border-amber-200'
-                        }`}
+                          }`}
                       >
                         <div className="flex justify-between items-center">
                           <span className="text-muted-foreground font-medium">Mã giảm giá:</span>
                           <span
-                            className={`font-bold ${
-                              selectedOrderDetail.coupon_data?.warning ||
-                              selectedOrderDetail.coupon_data?.error
+                            className={`font-bold ${selectedOrderDetail.coupon_data?.warning ||
+                                selectedOrderDetail.coupon_data?.error
                                 ? 'text-red-700'
                                 : 'text-amber-700'
-                            }`}
+                              }`}
                           >
                             {selectedOrderDetail.coupon_code}
                           </span>
@@ -651,18 +648,17 @@ const OrderManagement = () => {
                         {selectedOrderDetail.coupon_data ? (
                           <>
                             <p
-                              className={`text-sm ${
-                                selectedOrderDetail.coupon_data?.warning ||
-                                selectedOrderDetail.coupon_data?.error
+                              className={`text-sm ${selectedOrderDetail.coupon_data?.warning ||
+                                  selectedOrderDetail.coupon_data?.error
                                   ? 'text-red-600'
                                   : 'text-amber-600'
-                              } mt-2`}
+                                } mt-2`}
                             >
                               {selectedOrderDetail.coupon_data.type === 'percentage'
                                 ? `Giảm ${selectedOrderDetail.coupon_data.value}% đơn hàng`
                                 : `Giảm ${Number(
-                                    selectedOrderDetail.coupon_data.value,
-                                  ).toLocaleString('vi-VN')} đ`}
+                                  selectedOrderDetail.coupon_data.value,
+                                ).toLocaleString('vi-VN')} đ`}
                             </p>
                             {selectedOrderDetail.coupon_data.min_order_amount && (
                               <p className="text-xs text-gray-500 mt-1">
@@ -745,10 +741,9 @@ const OrderManagement = () => {
                     </div>
                     {selectedOrderDetail.status && (
                       <Badge
-                        className={`text-base md:text-lg px-4 py-2 ${
-                          statusConfig[selectedOrderDetail.status as keyof typeof statusConfig]
+                        className={`text-base md:text-lg px-4 py-2 ${statusConfig[selectedOrderDetail.status as keyof typeof statusConfig]
                             ?.color || statusConfig['Chờ xác nhận'].color
-                        }`}
+                          }`}
                       >
                         {selectedOrderDetail.status}
                       </Badge>

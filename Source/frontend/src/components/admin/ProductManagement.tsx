@@ -123,7 +123,7 @@ const ProductManagement = () => {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const res = await api.get("/products");
+      const res = await api.get("/admin/products");
       const productList = Array.isArray(res.data) ? res.data : res.data.data || [];
       setProducts(productList);
     } catch (err) {
@@ -255,12 +255,12 @@ const ProductManagement = () => {
 
       /* ================= ADD ================= */
       if (!editingProduct) {
-        const res = await api.post("/products", payload);
+        const res = await api.post("/admin/products", payload);
         productId = res.data.id;
       }
       /* ================= EDIT ================= */
       else {
-        await api.put(`/products/${editingProduct.id}`, payload);
+        await api.put(`/admin/products/${editingProduct.id}`, payload);
         productId = editingProduct.id;
       }
 
@@ -394,7 +394,7 @@ const ProductManagement = () => {
     if (!window.confirm("Bạn có chắc chắn muốn xóa sản phẩm này?")) return;
 
     try {
-      await api.delete(`/products/${productId}`);
+      await api.delete(`/admin/products/${productId}`);
       setProducts((prev) => prev.filter((p) => p.id !== productId));
       toast({ title: "Đã xóa", description: "Sản phẩm đã được xóa khỏi danh sách" });
     } catch (err) {

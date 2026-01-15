@@ -10,6 +10,7 @@ import api from '@/lib/api';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
+type AuthView = 'login' | 'auth' | 'otp' | 'google-verify' | 'google-success' | 'forgot-password' | 'forgot-otp' | 'reset-password' | 'reset-success';
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -22,6 +23,11 @@ export default function AuthPage() {
   const [showOTP, setShowOTP] = useState(false);
   const [otpValue, setOtpValue] = useState('');
   const navigate = useNavigate();
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentView, setCurrentView] = useState<AuthView>('auth');
 
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -57,30 +63,53 @@ export default function AuthPage() {
       await api.post('/verify-email', {
         email,
         code: otpValue,
+        purpose: 'reset_password'
       });
 
       toast.success('Xác thực thành công, mời đăng nhập');
-      setShowOTP(false);
-      setIsLogin(true);
+      setCurrentView('login');
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'OTP không đúng');
     }
   };
-const { login } = useAuth();
+
+  const handleVerifyForgotOTP = async () => {
+    try {
+      await api.post('/verify-email', {
+        email: forgotEmail,
+        code: otpValue,
+        purpose: 'reset_password',
+      });
+
+      toast.success('Xác nhận OTP thành công');
+      setCurrentView('reset-password');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'OTP không đúng');
+    }
+  };
+
+  const { login } = useAuth();
 
   const handleLogin = async () => {
-  try {
-    await login(email, password); // setUser sẽ được gọi bên trong context
-    toast.success('Đăng nhập thành công');
+    try {
+      const res: any = await login(email, password);
 
-    const role = JSON.parse(localStorage.getItem('user')!).role;
-    if (role === 'admin') navigate('/admin', { replace: true });
-    else navigate('/', { replace: true });
+      toast.success('Đăng nhập thành công');
 
-  } catch (err: any) {
-    toast.error(err.response?.data?.message || 'Sai thông tin đăng nhập');
-  }
-};
+      const role = res?.user?.role;
+
+      if (role === 'user') {
+        navigate('/', { replace: true });
+      }
+      else {
+        navigate('/admin', { replace: true });
+      }
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || 'Sai thông tin đăng nhập';
+      toast.error(errorMessage);
+      console.error("Login Error:", err);
+    }
+  };
 
 
   const handleSocialLogin = (provider: 'google' | 'facebook') => {
@@ -90,6 +119,76 @@ const { login } = useAuth();
 
   };
 
+  const handleForgotPasswordSubmit = async () => {
+    if (!email.trim()) {
+      toast.error('Vui lòng nhập email!');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      await api.post('/resend-code', { email });
+      setCurrentView('forgot-otp');
+
+      setForgotEmail(email);
+
+      toast.success('Mã xác nhận đã được gửi đến email!');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Email không tồn tại');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (isSubmitting) return;
+
+    // Validate
+    if (!newPassword || newPassword.length < 6) {
+      toast.error("Mật khẩu phải có ít nhất 6 ký tự");
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      toast.error("Mật khẩu xác nhận không khớp");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      await api.post("/reset-password", {
+        email: forgotEmail,
+        code: otpValue,
+        password: newPassword,
+        password_confirmation: confirmNewPassword,
+      });
+
+      toast.success("Đặt lại mật khẩu thành công");
+      setCurrentView("reset-success");
+
+      // Clear state (optional nhưng rất nên)
+      setNewPassword("");
+      setConfirmNewPassword("");
+      setOtpValue("");
+
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        "Mã xác nhận không đúng hoặc đã hết hạn";
+
+      toast.error(message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+
   const handleResendOTP = async () => {
     await api.post('/resend-code', { email });
     toast.success('Đã gửi lại mã');
@@ -98,10 +197,12 @@ const { login } = useAuth();
   return (
     <div className="min-h-screen bg-background">
       <Header />
+
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-4">
           <AnimatePresence mode="wait">
-            {showOTP ? (
+            {(currentView === 'otp' || currentView === 'forgot-otp') && (
+              /* ================= OTP VERIFY ================= */
               <motion.div
                 key="otp"
                 initial={{ opacity: 0, y: 30 }}
@@ -113,13 +214,17 @@ const { login } = useAuth();
                   <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Mail className="w-8 h-8 text-accent" />
                   </div>
+
                   <h1 className="text-3xl font-bold text-foreground mb-2">
                     Xác nhận Email
                   </h1>
+
                   <p className="text-muted-foreground">
                     Chúng tôi đã gửi mã xác nhận đến
                   </p>
-                  <p className="text-foreground font-medium mt-1">{email}</p>
+                  <p className="text-foreground font-medium mt-1">
+                    {email}
+                  </p>
                 </div>
 
                 <div className="p-8 bg-card rounded-3xl border border-border">
@@ -130,40 +235,43 @@ const { login } = useAuth();
                       onChange={setOtpValue}
                     >
                       <InputOTPGroup className="gap-2">
-                        <InputOTPSlot index={0} className="w-12 h-14 text-xl rounded-xl border-border" />
-                        <InputOTPSlot index={1} className="w-12 h-14 text-xl rounded-xl border-border" />
-                        <InputOTPSlot index={2} className="w-12 h-14 text-xl rounded-xl border-border" />
-                        <InputOTPSlot index={3} className="w-12 h-14 text-xl rounded-xl border-border" />
-                        <InputOTPSlot index={4} className="w-12 h-14 text-xl rounded-xl border-border" />
-                        <InputOTPSlot index={5} className="w-12 h-14 text-xl rounded-xl border-border" />
+                        {[0, 1, 2, 3, 4, 5].map((i) => (
+                          <InputOTPSlot
+                            key={i}
+                            index={i}
+                            className="w-12 h-14 text-xl rounded-xl border-border"
+                          />
+                        ))}
                       </InputOTPGroup>
                     </InputOTP>
 
                     <Button
-                      type="submit"
                       variant="hero"
                       size="lg"
                       className="w-full"
-                      onClick={handleVerifyOTP}
+                      onClick={
+                        currentView === 'forgot-otp'
+                          ? handleVerifyForgotOTP
+                          : handleVerifyOTP
+                      }
                     >
                       Xác nhận
                       <ArrowRight className="w-5 h-5" />
                     </Button>
 
-                    <div className="text-center">
-                      <p className="text-muted-foreground text-sm">
-                        Không nhận được mã?{' '}
-                        <button
-                          onClick={handleResendOTP}
-                          className="text-accent font-medium hover:underline"
-                        >
-                          Gửi lại
-                        </button>
-                      </p>
-                    </div>
+
+                    <p className="text-muted-foreground text-sm">
+                      Không nhận được mã?{" "}
+                      <button
+                        onClick={handleResendOTP}
+                        className="text-accent font-medium hover:underline"
+                      >
+                        Gửi lại
+                      </button>
+                    </p>
 
                     <button
-                      onClick={() => setShowOTP(false)}
+                      onClick={() => setCurrentView('login')}
                       className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
                     >
                       <ArrowLeft className="w-4 h-4" />
@@ -172,7 +280,9 @@ const { login } = useAuth();
                   </div>
                 </div>
               </motion.div>
-            ) : (
+            )}
+              /* ================= LOGIN / REGISTER ================= */
+            {(currentView === 'auth' || currentView === 'login') && (
               <motion.div
                 key="auth"
                 initial={{ opacity: 0, y: 30 }}
@@ -182,15 +292,17 @@ const { login } = useAuth();
               >
                 <div className="text-center mb-8">
                   <h1 className="text-3xl font-bold text-foreground mb-2">
-                    {isLogin ? 'Đăng nhập' : 'Đăng ký'}
+                    {isLogin ? "Đăng nhập" : "Đăng ký"}
                   </h1>
                   <p className="text-muted-foreground">
-                    {isLogin ? 'Chào mừng bạn trở lại!' : 'Tạo tài khoản mới'}
+                    {isLogin
+                      ? "Chào mừng bạn trở lại!"
+                      : "Tạo tài khoản mới"}
                   </p>
                 </div>
 
                 <div className="p-8 bg-card rounded-3xl border border-border">
-                  {/* Social Login Buttons */}
+                  {/* ===== SOCIAL LOGIN ===== */}
                   <div className="space-y-3 mb-6">
                     <button
                       onClick={() => handleSocialLogin('google')}
@@ -232,42 +344,39 @@ const { login } = useAuth();
                     </button>
                   </div>
 
-                  {/* Divider */}
+
+                  {/* ===== DIVIDER ===== */}
                   <div className="relative mb-6">
                     <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-border"></div>
+                      <div className="w-full border-t border-border" />
                     </div>
                     <div className="relative flex justify-center text-sm">
-                      <span className="px-4 bg-card text-muted-foreground">hoặc</span>
+                      <span className="px-4 bg-card text-muted-foreground">
+                        hoặc
+                      </span>
                     </div>
                   </div>
 
+                  {/* ===== FORM ===== */}
                   <form onSubmit={handleSubmit} className="space-y-4">
                     {!isLogin && (
-                      <div className="relative">
-                        <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                        <input
-                          type="text"
-                          value={name}
-                          onChange={(e) => setName(e.target.value)}
-                          placeholder="Họ và tên"
-                          required
-                          className="w-full h-12 pl-12 pr-4 bg-secondary rounded-xl border-0 focus:outline-none focus:ring-2 focus:ring-accent text-foreground placeholder:text-muted-foreground"
-                        />
-                      </div>
+                      <input
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Họ và tên"
+                        className="w-full h-12 px-4 bg-secondary rounded-xl"
+                        required
+                      />
                     )}
 
-                    <div className="relative">
-                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                      <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="Email"
-                        required
-                        className="w-full h-12 pl-12 pr-4 bg-secondary rounded-xl border-0 focus:outline-none focus:ring-2 focus:ring-accent text-foreground placeholder:text-muted-foreground"
-                      />
-                    </div>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Email"
+                      className="w-full h-12 px-4 bg-secondary rounded-xl"
+                      required
+                    />
 
                     <div className="relative">
                       <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -313,6 +422,7 @@ const { login } = useAuth();
                       <div className="flex justify-end">
                         <button
                           type="button"
+                          onClick={handleForgotPasswordSubmit}
                           className="text-sm text-accent hover:underline"
                         >
                           Quên mật khẩu?
@@ -322,31 +432,118 @@ const { login } = useAuth();
 
                     <Button
                       type="submit"
-                      variant="hero" size="lg" className="w-full">
-                      {isLogin ? 'Đăng nhập' : 'Đăng ký'}
+                      variant="hero"
+                      size="lg"
+                      className="w-full"
+                    >
+                      {isLogin ? "Đăng nhập" : "Đăng ký"}
                       <ArrowRight className="w-5 h-5" />
                     </Button>
                   </form>
 
                   <p className="text-center text-muted-foreground mt-6">
-                    {isLogin ? 'Chưa có tài khoản?' : 'Đã có tài khoản?'}
+                    {isLogin
+                      ? "Chưa có tài khoản?"
+                      : "Đã có tài khoản?"}
                     <button
-                      onClick={() => {
-                        setIsLogin(!isLogin);
-                        setPassword('');
-                        setConfirmPassword('');
-                      }}
+                      onClick={() => setIsLogin(!isLogin)}
                       className="ml-1 text-accent font-medium hover:underline"
                     >
-                      {isLogin ? 'Đăng ký ngay' : 'Đăng nhập'}
+                      {isLogin ? "Đăng ký ngay" : "Đăng nhập"}
                     </button>
                   </p>
                 </div>
+
+              </motion.div>
+            )}
+              {currentView === 'reset-password' && (
+              <motion.div
+                key="reset-password"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -30 }}
+                className="max-w-md mx-auto"
+              >
+                <div className="text-center mb-8">
+                  <h1 className="text-3xl font-bold text-foreground mb-2">
+                    Đặt lại mật khẩu
+                  </h1>
+                  <p className="text-muted-foreground">
+                    Nhập mật khẩu mới cho tài khoản
+                  </p>
+                </div>
+
+                <div className="p-8 bg-card rounded-3xl border border-border">
+                  <form onSubmit={handleResetPassword} className="space-y-4">
+                    {/* Mật khẩu mới */}
+                    <div className="relative">
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Mật khẩu mới"
+                        className="w-full h-12 pl-12 pr-12 bg-secondary rounded-xl"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2"
+                      >
+                        {showPassword ? <EyeOff /> : <Eye />}
+                      </button>
+                    </div>
+
+                    {/* Nhập lại mật khẩu */}
+                    <div className="relative">
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                      <input
+                        type={showConfirmPassword ? "text" : "password"}
+                        value={confirmNewPassword}
+                        onChange={(e) => setConfirmNewPassword(e.target.value)}
+                        placeholder="Nhập lại mật khẩu"
+                        className="w-full h-12 pl-12 pr-12 bg-secondary rounded-xl"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2"
+                      >
+                        {showConfirmPassword ? <EyeOff /> : <Eye />}
+                      </button>
+                    </div>
+
+                    <Button
+                      type="submit"
+                      variant="hero"
+                      size="lg"
+                      className="w-full"
+                      disabled={isSubmitting}
+                    >
+                      Xác nhận đặt lại mật khẩu
+                      <ArrowRight />
+                    </Button>
+                  </form>
+                </div>
+              </motion.div>
+            )}
+            {currentView === 'reset-success' && (
+              <motion.div className="max-w-md mx-auto text-center">
+                <h1 className="text-3xl font-bold mb-4">🎉 Thành công</h1>
+                <p className="text-muted-foreground mb-6">
+                  Mật khẩu của bạn đã được cập nhật
+                </p>
+                <Button onClick={() => setCurrentView('login')}>
+                  Đăng nhập lại
+                </Button>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
       </main>
+
       <Footer />
     </div>
   );

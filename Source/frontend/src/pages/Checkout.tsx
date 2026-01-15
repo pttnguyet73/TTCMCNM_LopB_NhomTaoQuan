@@ -10,10 +10,11 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
 import { toast } from '@/hooks/use-toast';
 import { formatPrice } from '@/data/products';
-import { 
-  CreditCard, 
-  Truck, 
-  Building2, 
+import { useCheckout } from '@/contexts/CheckoutContext';
+import {
+  CreditCard,
+  Truck,
+  Building2,
   Smartphone,
   Wallet,
   MapPin,
@@ -76,9 +77,15 @@ const paymentMethods = [
 
 const Checkout = () => {
   const navigate = useNavigate();
-  const { items, totalPrice, clearCart } = useCart();
-  const [paymentMethod, setPaymentMethod] = useState('cod');
+  const {
+    items,
+    clearCart,
+    totalPrice = 0,
+    discount = 0,
+    finalTotal = 0,
+  } = useCart(); const [paymentMethod, setPaymentMethod] = useState('cod');
   const [isProcessing, setIsProcessing] = useState(false);
+  const createOrder = useCheckout();
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
     fullName: '',
     phone: '',
@@ -91,7 +98,7 @@ const Checkout = () => {
   });
 
   const shippingFee = totalPrice >= 10000000 ? 0 : 50000;
-  const finalTotal = totalPrice + shippingFee;
+
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -128,24 +135,40 @@ const Checkout = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
-    
-    setIsProcessing(true);
-    
-    // Simulate payment processing
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    setIsProcessing(false);
-    clearCart();
-    
-    toast({
-      title: 'Đặt hàng thành công!',
-      description: 'Cảm ơn bạn đã mua hàng. Chúng tôi sẽ liên hệ sớm nhất.',
-    });
-    
-    navigate('/');
+
+    try {
+      await createOrder({
+        items,
+        total_amount: Number(finalTotal),
+        shipping: {
+          fullName: shippingInfo.fullName,
+          phone: shippingInfo.phone,
+          address: shippingInfo.address,
+          district: shippingInfo.district,
+        },
+        shippingFee,
+        paymentMethod,
+      });
+
+      clearCart();
+      toast({ title: 'Đặt hàng thành công!' });
+      navigate('/');
+    } catch (err: any) {
+      console.error(err.response?.data);
+
+      toast({
+        title: 'Lỗi đặt hàng',
+        description:
+          err.response?.data?.error ||
+          err.response?.data?.message ||
+          'Có lỗi xảy ra',
+        variant: 'destructive',
+      });
+    }
   };
+
 
   if (items.length === 0) {
     return (
@@ -173,10 +196,10 @@ const Checkout = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+
       <main className="container mx-auto px-4 py-8">
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           onClick={() => navigate('/cart')}
           className="mb-6 -ml-2"
         >
@@ -325,11 +348,10 @@ const Checkout = () => {
                   {paymentMethods.map((method) => (
                     <label
                       key={method.id}
-                      className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                        paymentMethod === method.id
-                          ? 'border-primary bg-primary/5'
-                          : 'border-border hover:border-muted-foreground/30'
-                      }`}
+                      className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${paymentMethod === method.id
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-muted-foreground/30'
+                        }`}
                     >
                       <RadioGroupItem value={method.id} id={method.id} />
                       <div className={`w-12 h-12 rounded-xl flex items-center justify-center bg-muted ${method.color}`}>
@@ -379,13 +401,13 @@ const Checkout = () => {
             <div className="lg:col-span-1">
               <div className="bg-card rounded-2xl p-6 border border-border sticky top-24">
                 <h2 className="text-xl font-semibold mb-4">Đơn hàng của bạn</h2>
-                
+
                 <div className="space-y-4 max-h-64 overflow-y-auto mb-4">
                   {items.map((item, index) => (
                     <div key={index} className="flex gap-3">
                       <div className="w-16 h-16 bg-muted rounded-lg overflow-hidden flex-shrink-0">
-                        <img 
-                          src={item.image} 
+                        <img
+                          src={item.image}
                           alt={item.product.name}
                           className="w-full h-full object-cover"
                         />
@@ -393,7 +415,7 @@ const Checkout = () => {
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm truncate">{item.product.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          {item.selectedColor} 
+                          {item.selectedColor}
                         </p>
                         <div className="flex justify-between items-center mt-1">
                           <span className="text-xs text-muted-foreground">x{item.quantity}</span>
@@ -428,15 +450,32 @@ const Checkout = () => {
 
                 <Separator className="my-4" />
 
-                <div className="flex justify-between items-center mb-6">
-                  <span className="text-lg font-semibold">Tổng cộng</span>
-                  <span className="text-2xl font-bold text-primary">
-                    {formatPrice(finalTotal)}
-                  </span>
+                <div className="space-y-4 mb-6">
+                  <div className="flex justify-between items-center">
+                    <span className="text-lg font-semibold">Tạm tính</span>
+                    <span className="text-lg font-bold text-primary">
+                      {formatPrice(totalPrice)}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-center">
+                    <span className="text-lg font-semibold">Giảm giá</span>
+                    <span className="text-lg font-bold text-green-600">
+                      -{formatPrice(discount)}
+                    </span>
+                  </div>
+
+                  <div className="border-t border-border pt-4 flex justify-between items-center">
+                    <span className="text-xl font-bold">Tổng cộng</span>
+                    <span className="text-2xl font-bold text-primary">
+                      {formatPrice(finalTotal)}
+                    </span>
+                  </div>
                 </div>
 
-                <Button 
-                  type="submit" 
+
+                <Button
+                  type="submit"
                   className="w-full h-12 text-base"
                   disabled={isProcessing}
                 >

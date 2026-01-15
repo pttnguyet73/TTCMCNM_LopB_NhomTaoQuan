@@ -39,7 +39,7 @@ class AdminOrderController extends Controller
                     'id'       => $order->id,
                     'customer' => $order->user?->name ?? 'N/A',
                     'product'  => $productText ?: '—',
-                    'amount'   => $order->total_amount,
+                    'total_amount'   => $order->total_amount,
                     'status'   => $order->status,
                 ];
             });
