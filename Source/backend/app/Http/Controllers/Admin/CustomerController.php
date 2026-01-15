@@ -24,7 +24,7 @@ class CustomerController extends Controller
                 'users.phone',
                 'users.status',
                 'users.role',
-                'users.email_verified_at',
+                'users.is_verified',
 
                 // Địa chỉ (lấy 1 địa chỉ đầu tiên)
                 DB::raw('MAX(address.street) AS street'),
@@ -40,7 +40,7 @@ class CustomerController extends Controller
                 'users.phone',
                 'users.status',
                 'users.role',
-                'users.email_verified_at'
+                'users.is_verified'
             )
             ->orderByDesc('total_spent')
             ->get()
@@ -54,7 +54,7 @@ class CustomerController extends Controller
                     'role' => $customer->role,
 
                     // ✅ xác thực email
-                    'email_verified_at' => $customer->email_verified_at,
+                    'is_verified' => $customer->is_verified,
 
                     // ✅ địa chỉ gộp
                     'address' => $customer->street
@@ -135,8 +135,7 @@ class CustomerController extends Controller
                 'role' => $customer->role,
 
                 // ✅ xác thực email
-                'email_verified_at' => $customer->email_verified_at,
-
+                'is_verified' => $customer->is_verified,
                 // ✅ địa chỉ
                 'address' => $customer->street
                     ? $customer->street . ', ' . $customer->district

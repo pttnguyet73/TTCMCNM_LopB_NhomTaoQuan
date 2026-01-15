@@ -151,10 +151,10 @@ const MarketingManagement = () => {
     code: "",
   type: "percent",
   value: "",
-  minOrder: "",
-  usageLimit: "",
-  startDate: "",
-  endDate: "",
+  min_order_amount: "",
+  usage_limit: "",
+  start_date: "",
+  end_date: "",
 });
 
   const filteredCoupons = coupons.filter((coupon) =>
@@ -167,21 +167,25 @@ const MarketingManagement = () => {
         code: coupon.code,
         type: coupon.type,
         value: coupon.value.toString(),
-        minOrder: coupon.min_order_amount.toString(),
-        usageLimit: coupon.usage_limit.toString(),
-        startDate: coupon.start_date,
-        endDate: coupon.end_date,
-      });
+        min_order_amount: coupon.min_order_amount.toString(),
+        usage_limit: coupon.usage_limit.toString(),
+        start_date: coupon.start_date
+      ? new Date(coupon.start_date).toISOString().slice(0, 10)
+      : '',
+    end_date: coupon.end_date
+      ? new Date(coupon.end_date).toISOString().slice(0, 10)
+      : '',
+  });
       setEditingCoupon(coupon);
     } else {
       setCouponForm({
         code: "",
         type: "percent",
         value: "",
-        minOrder: "",
-        usageLimit: "",
-        startDate: "",
-        endDate: "",
+        min_order_amount: "",
+        usage_limit: "",
+        start_date: "",
+        end_date: "",
       });
       setEditingCoupon(null);
     }
@@ -195,10 +199,10 @@ const MarketingManagement = () => {
       code: couponForm.code,
       type: couponForm.type,
       value: Number(couponForm.value),
-      min_order_amount: Number(couponForm.minOrder) || 0,
-      usage_limit: Number(couponForm.usageLimit) || 0,
-      start_date: couponForm.startDate,
-      end_date: couponForm.endDate,
+      min_order_amount: Number(couponForm.min_order_amount) || 0,
+      usage_limit: Number(couponForm.usage_limit) || 0,
+      start_date: couponForm.start_date,
+      end_date: couponForm.end_date,
     };
 
     try {
@@ -730,10 +734,10 @@ const MarketingManagement = () => {
               <div className="space-y-2">
                 <Label htmlFor="minOrder">Đơn tối thiểu</Label>
                 <Input
-                  id="minOrder"
+                  id="min_order_amount"
                   type="number"
-                  value={couponForm.minOrder}
-                  onChange={(e) => setCouponForm({ ...couponForm, minOrder: e.target.value })}
+                  value={couponForm.min_order_amount}
+                  onChange={(e) => setCouponForm({ ...couponForm, min_order_amount: e.target.value })}
                   placeholder="1000000"
                 />
               </div>
@@ -742,30 +746,30 @@ const MarketingManagement = () => {
             <div className="space-y-2">
               <Label htmlFor="usageLimit">Số lượt sử dụng</Label>
               <Input
-                id="usageLimit"
+                id="usage_limit"
                 type="number"
-                value={couponForm.usageLimit}
-                onChange={(e) => setCouponForm({ ...couponForm, usageLimit: e.target.value })}
+                value={couponForm.usage_limit}
+                onChange={(e) => setCouponForm({ ...couponForm, usage_limit: e.target.value })}
                 placeholder="100"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="startDate">Ngày bắt đầu</Label>
+                <Label htmlFor="start_date">Ngày bắt đầu</Label>
                 <Input
-                  id="startDate"
+                  id="start_date"
                   type="date"
-                  value={couponForm.startDate}
-                  onChange={(e) => setCouponForm({ ...couponForm, startDate: e.target.value })}
+                  value={couponForm.start_date}
+                  onChange={(e) => setCouponForm({ ...couponForm, start_date: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="endDate">Ngày kết thúc</Label>
+                <Label htmlFor="end_date">Ngày kết thúc</Label>
                 <Input
-                  id="endDate"
+                  id="end_date"
                   type="date"
-                  value={couponForm.endDate}
-                  onChange={(e) => setCouponForm({ ...couponForm, endDate: e.target.value })}
+                  value={couponForm.end_date}
+                  onChange={(e) => setCouponForm({ ...couponForm, end_date: e.target.value })}
                 />
               </div>
             </div>

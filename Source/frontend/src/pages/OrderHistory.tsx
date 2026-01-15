@@ -28,7 +28,7 @@ interface Order {
   date: string;
   paymentMethod?: string;
   items: OrderItem[];
-  total: number;
+  total_amount: number;
   status: "pending" | "shipping" | "delivered";
 }
 
@@ -126,7 +126,7 @@ const OrderHistory = () => {
             price: parsePrice(it.price_raw ?? it.price ?? it.price_raw),
           }));
 
-          const total = parsePrice(o.total_raw ?? o.total_amount ?? o.total_raw ?? o.total_amount);
+          const total_amount = parsePrice(o.total_raw ?? o.total_amount ?? o.total_raw ?? o.total_amount);
 
           return {
             id: o.id,
@@ -135,7 +135,7 @@ const OrderHistory = () => {
             date: o.created_at ?? o.createdAt ?? o.createdAtRaw ?? o.created_at,
             paymentMethod: o.payment_method ?? o.paymentMethod,
             items,
-            total,
+            total_amount: total_amount,
             status: mapStatusKey(o.status_key ?? o.status),
           } as Order;
         }));
@@ -301,7 +301,7 @@ const OrderHistory = () => {
                           <div className="text-right">
                             <span className="text-sm text-muted-foreground">Tổng tiền: </span>
                             <span className="text-lg font-bold text-accent">
-                              {formatPrice(order.total)}
+                              {formatPrice(order.total_amount)}
                             </span>
                           </div>
                           <Button variant="outline" size="sm" className="gap-1">

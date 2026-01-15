@@ -5,7 +5,7 @@ export interface Customer {
   name: string;
   email: string;
   google_id?: string;
-  email_verified_at?: string;
+  is_verified?: number;
   password: string;
   remember_token?: string;
   current_team_id?: number;
@@ -75,7 +75,7 @@ export const customerAPI = {
   // Lấy danh sách đơn hàng của khách hàng
   getCustomerOrders: async (customerId: number) => {
     try {
-      const response = await api.get('/admin/orders', {
+      const response = await api.get('/admin/order', {
         params: {
           customer_id: customerId,
         },
