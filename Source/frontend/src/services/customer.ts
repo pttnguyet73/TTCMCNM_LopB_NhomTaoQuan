@@ -64,7 +64,7 @@ export const customerAPI = {
   // Cập nhật trạng thái khách hàng
   updateCustomerStatus: async (id: number, status: 'active' | 'inactive' | 'vip') => {
     try {
-      const response = await api.put(`/admin/customers/${id}/status`, { status });
+      const response = await api.put(`/admin/users/${id}/status`, { status });
       return response.data;
     } catch (error) {
       console.error('Error updating customer status:', error);
@@ -75,7 +75,8 @@ export const customerAPI = {
   // Lấy danh sách đơn hàng của khách hàng
   getCustomerOrders: async (customerId: number) => {
     try {
-      const response = await api.get('/admin/order', {
+      const response = await api.get(`/admin/customers/${customerId}`, {
+        
         params: {
           customer_id: customerId,
         },

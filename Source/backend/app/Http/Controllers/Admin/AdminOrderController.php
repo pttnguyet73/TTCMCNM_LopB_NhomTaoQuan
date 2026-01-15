@@ -41,6 +41,7 @@ class AdminOrderController extends Controller
                     'product'  => $productText ?: '—',
                     'total_amount'   => $order->total_amount,
                     'status'   => $order->status,
+                    'created_at' => $order->created_at->format('Y-m-d H:i:s'),
                 ];
             });
 

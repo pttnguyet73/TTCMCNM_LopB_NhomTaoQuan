@@ -193,7 +193,7 @@ const OrderManagement = () => {
           status: order.status || 'Chờ xác nhận',
           status_key: order.status_key || order.status || 'Chờ xác nhận',
           payment_method: 'COD',
-          created_at: '',
+          created_at: order.created_at || '',
         }));
 
         setOrders(transformedOrders);

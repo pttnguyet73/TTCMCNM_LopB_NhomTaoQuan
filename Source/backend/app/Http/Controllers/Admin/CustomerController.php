@@ -99,11 +99,11 @@ class CustomerController extends Controller
     public function show($id)
     {
         $customer = User::where('role', 'user')
-            ->leftJoin('addresses', 'addresses.user_id', '=', 'users.id')
+            ->leftJoin('address', 'address.user_id', '=', 'users.id')
             ->select(
                 'users.*',
-                DB::raw('MAX(addresses.street) AS street'),
-                DB::raw('MAX(addresses.district) AS district')
+                DB::raw('MAX(address.street) AS street'),
+                DB::raw('MAX(address.district) AS district')
             )
             ->groupBy('users.id')
             ->find($id);

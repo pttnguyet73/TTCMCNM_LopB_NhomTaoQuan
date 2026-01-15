@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Lock, User, Eye, EyeOff, ArrowRight, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -29,7 +29,14 @@ export default function AuthPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentView, setCurrentView] = useState<AuthView>('auth');
 
+useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+  const view = params.get('view');
 
+  if (view === 'otp') {
+    setCurrentView('otp'); 
+  }
+}, []);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -51,7 +58,7 @@ export default function AuthPage() {
         password_confirmation: confirmPassword,
       });
 
-      setShowOTP(true);
+      setCurrentView('otp');
       toast.success('Mã xác nhận đã gửi về email');
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Lỗi đăng ký');
@@ -63,7 +70,8 @@ export default function AuthPage() {
       await api.post('/verify-email', {
         email,
         code: otpValue,
-        purpose: 'reset_password'
+        is_verified: true,
+        purpose: 'register'
       });
 
       toast.success('Xác thực thành công, mời đăng nhập');

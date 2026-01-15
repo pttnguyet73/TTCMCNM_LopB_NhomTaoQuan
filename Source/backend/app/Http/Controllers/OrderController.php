@@ -141,7 +141,7 @@ class OrderController extends Controller
         $order = DB::table('orders')
             ->join('users', 'users.id', '=', 'orders.user_id')
             ->leftJoin('address', 'address.user_id', '=', 'users.id')
-            ->where('orders.id', $id)
+            ->where('orders.user_id', $id)
             ->select(
                 'orders.id',
                 'orders.status',

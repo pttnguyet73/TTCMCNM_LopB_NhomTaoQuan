@@ -35,7 +35,7 @@ const menuItems = [
   { id: "customers", label: "Khách hàng", icon: Users },
   { id: "users", label: "Người dùng", icon: UserCog },
   { id: "content", label: "Nội dung", icon: FileText },
-  { id: "marketing", label: "Marketing", icon: Megaphone },
+  { id: "marketing", label: "Mã giảm giá", icon: Megaphone },
   { id: "settings", label: "Cài đặt", icon: Settings },
 ];
 

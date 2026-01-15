@@ -93,7 +93,7 @@ class AdminUserController extends Controller
             'role' => $validated['role'],
             'status' => $validated['status'],
             'phone' => $validated['phone'] ?? null,
-            'is_verified' => true,
+            'is_verified' => false,
             'email_verified_at' => now(),
         ]);
 

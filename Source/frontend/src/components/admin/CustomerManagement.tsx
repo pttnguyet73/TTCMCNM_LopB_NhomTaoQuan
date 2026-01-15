@@ -116,7 +116,8 @@ const CustomerManagement = () => {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const [selectedCustomerOrders, setSelectedCustomerOrders] = useState<Order[]>([]);
+const [selectedOrders, setSelectedOrders] = useState<Order[]>([]);
+const [selectedOrderItems, setSelectedOrderItems] = useState<any[]>([]);
   const [ordersLoading, setOrdersLoading] = useState<boolean>(false);
   const [exporting, setExporting] = useState<boolean>(false);
   const { toast } = useToast();
@@ -135,7 +136,7 @@ const CustomerManagement = () => {
       const formattedCustomers = customersData.map((customer: any) => ({
         ...customer,
         avatar: getAvatarFromName(customer.name),
-        orders_count: customer.order_count ?? 0,
+        orders_count: customer.orders_count ?? 0,
         total_spent: customer.total_spent || 0,
         last_order_date: customer.last_order_date || null,
         phone: customer.phone || 'Chưa cập nhật',
@@ -181,22 +182,22 @@ const CustomerManagement = () => {
     setFilteredCustomers(result);
   }, [customers, searchTerm, filterStatus]);
 
-  const fetchCustomerOrders = async (customerId: number) => {
-    try {
-      setOrdersLoading(true);
-      const response = await customerAPI.getCustomerOrders(customerId);
-      setSelectedCustomerOrders(response.data || response || []);
-    } catch (error: any) {
-      console.error('Error fetching customer orders:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Lỗi',
-        description: error.response?.data?.message || 'Không thể tải đơn hàng',
-      });
-    } finally {
-      setOrdersLoading(false);
-    }
-  };
+ const fetchCustomerOrders = async (customerId: number) => {
+  try {
+    setOrdersLoading(true);
+
+  } catch (error: any) {
+    console.error('Error fetching customer orders:', error);
+    toast({
+      variant: 'destructive',
+      title: 'Lỗi',
+      description:
+        error.response?.data?.message || 'Không thể tải đơn hàng',
+    });
+  } finally {
+    setOrdersLoading(false);
+  }
+};
 
   const handleSelectCustomer = async (customer: Customer) => {
     setSelectedCustomer(customer);
@@ -659,47 +660,7 @@ const CustomerManagement = () => {
               </div>
 
               {/* Order History */}
-              <div className="border-t pt-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="font-medium">Lịch sử mua hàng gần đây</h4>
-                  <Badge variant="outline">{selectedCustomerOrders.length} đơn hàng</Badge>
-                </div>
-
-                {ordersLoading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
-                    <p>Đang tải đơn hàng...</p>
-                  </div>
-                ) : selectedCustomerOrders.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <ShoppingBag className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>Khách hàng chưa có đơn hàng nào</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {selectedCustomerOrders.map((order) => (
-                      <div
-                        key={order.id}
-                        className="flex items-center justify-between p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                      >
-                        <div>
-                          <p className="font-medium text-sm">#{order.id}</p>
-                          <p className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {formatDate(order.created_at)}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-medium text-sm">{formatPrice(order.total_amount)}</p>
-                          <Badge variant="outline" className="text-xs">
-                            {order.status}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              
             </div>
           )}
         </DialogContent>

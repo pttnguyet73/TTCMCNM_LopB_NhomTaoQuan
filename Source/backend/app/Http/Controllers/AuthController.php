@@ -44,12 +44,13 @@ class AuthController extends Controller
         $request->validate([
             'email' => 'required|email',
             'code' => 'required|string',
-            'purpose' => 'nullable|in:register,reset_password',
+            'code_purpose' => 'nullable|in:register,reset_password',
         ]);
 
         $email = $request->email;
         $code = $request->code;
-        $purpose = $request->input('purpose', 'register');
+        $code_purpose = $request->input('code_purpose', 'register');
+        $is_verified = true;
 
         $user = User::where('email', $email)->first();
 
@@ -65,8 +66,9 @@ class AuthController extends Controller
             return response()->json(['message' => 'Code expired'], 400);
         }
 
-        if ($purpose === 'register') {
+        if ($code_purpose === 'register') {
             $user->email_verified_at = now();
+            $user->is_verified = $is_verified;
         }
 
         // clear OTP
@@ -186,9 +188,8 @@ class AuthController extends Controller
     public function updateProfile(Request $request)
 {
 
-    $user = Auth::userOrFail();
-
-
+     $userId = Auth::id();
+     $user = User::findOrFail($userId);
     $validated = $request->validate([
         'name'   => 'nullable|string|max:255',
         'phone'  => 'nullable|string|max:50',

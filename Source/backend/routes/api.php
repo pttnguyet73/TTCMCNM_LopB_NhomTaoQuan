@@ -1,9 +1,10 @@
 <?php
+
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use Illuminate\Http\Request;
 use App\Http\Controllers\ProductController;
-use App\Http\Controllers\Admin\CustomerController;  
+use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\CustomerExportController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ChatController;
@@ -12,7 +13,7 @@ use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CouponController;
 use App\Http\Middleware\RoleMiddleware;
-use App\Http\Controllers\ProductSpecController; 
+use App\Http\Controllers\ProductSpecController;
 use App\Http\Controllers\Admin\AdminProductController;
 use App\Http\Controllers\ReviewController;
 
@@ -78,16 +79,16 @@ Route::middleware(['auth:sanctum'])->prefix('categories')->group(function () {
 // });
 
 Route::prefix('admin/products')->group(function () {
-    Route::get('/', [AdminProductController::class, 'index']); 
-    Route::get('/{id}', [AdminProductController::class, 'show']);   
-    Route::post('/', [AdminProductController::class, 'store']);       
-    Route::put('/{id}', [AdminProductController::class, 'update']);  
+    Route::get('/', [AdminProductController::class, 'index']);
+    Route::get('/{id}', [AdminProductController::class, 'show']);
+    Route::post('/', [AdminProductController::class, 'store']);
+    Route::put('/{id}', [AdminProductController::class, 'update']);
     Route::delete('/{id}', [AdminProductController::class, 'destroy']);
 });
 Route::prefix('products')->group(function () {
     Route::get('/', [ProductController::class, 'index']);
     Route::get('/{id}', [ProductController::class, 'show']);
-    Route::post('/', [ProductController::class, 'store']);       
+    Route::post('/', [ProductController::class, 'store']);
     Route::delete('/{id}', [ProductController::class, 'destroy']);
 });
 
@@ -95,12 +96,12 @@ Route::post('/product-coupons', [App\Http\Controllers\ProductCouponController::c
 Route::delete('/product-coupons', [App\Http\Controllers\ProductCouponController::class, 'detachCoupon']);
 
 route::middleware(['auth:sanctum'])->prefix('coupons')->group(function () {
-    Route::get('/', [CouponController::class, 'index']); 
-    Route::post('/', [CouponController::class, 'store']);       
-    Route::put('/{id}', [CouponController::class, 'update']);  
-    Route::delete('/{id}', [CouponController::class, 'destroy']); 
+    Route::get('/', [CouponController::class, 'index']);
+    Route::post('/', [CouponController::class, 'store']);
+    Route::put('/{id}', [CouponController::class, 'update']);
+    Route::delete('/{id}', [CouponController::class, 'destroy']);
     Route::get('/{code}', [CouponController::class, 'getCode']);
-}); 
+});
 
 
 Route::post('/reviews', [App\Http\Controllers\ReviewController::class, 'store']);
@@ -112,7 +113,7 @@ Route::get('/reviews/{productId}', [App\Http\Controllers\ReviewController::class
 
 
 Route::middleware(['auth:sanctum'])->prefix('cart')->group(function () {
-     Route::get('/', [CartController::class, 'index']);
+    Route::get('/', [CartController::class, 'index']);
     Route::post('/', [CartController::class, 'store']);
     Route::put('/{id}', [CartController::class, 'update']);
     Route::delete('/{id}', [CartController::class, 'destroy']);
@@ -161,6 +162,7 @@ Route::middleware(['auth:sanctum', RoleMiddleware::class . ':admin,saler'])->get
 
 Route::middleware(['auth:sanctum'])->prefix('admin')->group(function () {
     Route::get('/customers', [CustomerController::class, 'index']);
+    Route::get('/customers/{id}', [CustomerController::class, 'show']);
 });
 
 Route::middleware(['auth:sanctum'])->prefix('admin')->group(function () {
